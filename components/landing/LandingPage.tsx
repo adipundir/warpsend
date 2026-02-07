@@ -38,7 +38,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
                         <a href="#features" className="hover:text-white transition-colors">
                             Features
                         </a>
-                        <a href="#" className="hover:text-white transition-colors">
+                        <a href="#how-it-works" className="hover:text-white transition-colors">
                             How it Works
                         </a>
                     </div>

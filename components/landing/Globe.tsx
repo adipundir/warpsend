@@ -38,7 +38,7 @@ export function Globe({
     useEffect(() => {
         if (!canvasRef.current) return;
 
-        let width = size * 2;
+        const width = size * 2;
 
         const globe = createGlobe(canvasRef.current, {
             devicePixelRatio: 2,

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { AnimatedLanding, LandingPage } from "@/components/landing";
 import { SendFunds } from "@/components/send-funds";
+import { BalanceSummary } from "@/components/balance-summary";
 
 type PageState = "animation" | "landing" | "app";
 
@@ -42,10 +43,13 @@ export default function Home() {
         <h1 className="text-3xl font-bold mb-2 text-white">Send USDC Anywhere</h1>
         <p className="text-gray-400 max-w-md">
           Send USDC to any wallet address or ENS name. Cross-chain transfers
-          powered by Circle CCTP.
+          powered by Circle Gateway.
         </p>
       </div>
-      <SendFunds />
+      <div className="w-full max-w-lg space-y-6">
+        <BalanceSummary />
+        <SendFunds />
+      </div>
     </div>
   );
 }

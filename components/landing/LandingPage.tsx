@@ -157,7 +157,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
                             </div>
                             <h3 className="text-lg font-medium mb-2">Secure</h3>
                             <p className="text-gray-500 text-sm">
-                                Native USDC, no wrapped tokens. Circle's attestation guarantees every transfer.
+                                Native USDC, no wrapped tokens. Circle&apos;s attestation guarantees every transfer.
                             </p>
                         </div>
 

@@ -52,7 +52,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
                 {/* Background Globe */}
                 <div
                     className="absolute inset-0 flex items-center justify-center pointer-events-none transition-opacity duration-700"
-                    style={{ opacity: isVisible ? 0.15 : 0 }}
+                    style={{ opacity: isVisible ? 0.5 : 0 }}
                 >
                     <Globe size={550} showArcs={true} autoRotate={true} />
                 </div>

@@ -14,7 +14,7 @@ export function LandingHero({ isVisible = false }: LandingHeroProps) {
                 className="absolute opacity-20"
                 style={{
                     transition: "opacity 0.8s ease-out",
-                    opacity: isVisible ? 0.2 : 0,
+                    opacity: isVisible ? 0.5 : 0,
                 }}
             >
                 <Globe size={280} showArcs={true} autoRotate={true} />

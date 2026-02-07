@@ -1,0 +1,68 @@
+"use client";
+
+import { useEffect, useState } from "react";
+
+interface LoadingCounterProps {
+    duration?: number;
+    onComplete?: () => void;
+}
+
+export function LoadingCounter({
+    duration = 2500,
+    onComplete,
+}: LoadingCounterProps) {
+    const [count, setCount] = useState(0);
+    const [isComplete, setIsComplete] = useState(false);
+
+    useEffect(() => {
+        const startTime = Date.now();
+        const endTime = startTime + duration;
+
+        const animate = () => {
+            const now = Date.now();
+            const progress = Math.min((now - startTime) / duration, 1);
+            const currentCount = Math.floor(progress * 100);
+
+            setCount(currentCount);
+
+            if (now < endTime) {
+                requestAnimationFrame(animate);
+            } else {
+                setCount(100);
+                setIsComplete(true);
+                onComplete?.();
+            }
+        };
+
+        requestAnimationFrame(animate);
+    }, [duration, onComplete]);
+
+    return (
+        <div className="flex items-center justify-center w-full h-full relative">
+            {/* Loading text */}
+            <div
+                className="absolute left-12 bottom-12 text-purple-500 text-sm tracking-widest font-mono"
+                style={{
+                    opacity: isComplete ? 0 : 1,
+                    transition: "opacity 0.3s ease-out",
+                }}
+            >
+                LOADING...
+            </div>
+
+            {/* Counter */}
+            <div
+                className="text-purple-500 font-bold select-none"
+                style={{
+                    fontSize: "clamp(80px, 20vw, 200px)",
+                    fontStyle: "italic",
+                    fontFamily: "system-ui, -apple-system, sans-serif",
+                    opacity: isComplete ? 0 : 1,
+                    transition: "opacity 0.3s ease-out",
+                }}
+            >
+                {count.toString().padStart(3, "0")}
+            </div>
+        </div>
+    );
+}

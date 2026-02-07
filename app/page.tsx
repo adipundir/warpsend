@@ -9,7 +9,7 @@ export default function Home() {
   const [pageState, setPageState] = useState<PageState>("animation");
 
   const handleGetStarted = () => {
-    window.location.href = "/send";
+    setPageState("landing");
   };
 
   if (pageState === "animation") {

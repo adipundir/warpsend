@@ -25,7 +25,7 @@ export function Header() {
       <div className="container flex h-14 items-center justify-between px-4 md:px-8">
         <div className="flex items-center gap-6">
           <Link href="/" className="flex items-center gap-2">
-            <span className="text-lg font-semibold text-primary">WarpSend</span>
+            <span className="text-xl font-bold">WarpSend</span>
           </Link>
           <nav className="hidden md:flex items-center gap-1">
             {navItems.map((item) => (

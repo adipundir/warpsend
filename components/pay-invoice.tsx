@@ -307,7 +307,7 @@ export function PayInvoice({ invoice, onPaid }: PayInvoiceProps) {
 
         {isPaid ? (
           <div className="text-center py-4">
-            <p className="text-lg font-medium text-green-600 dark:text-green-400">
+            <p className="text-lg font-medium text-foreground">
               This invoice has been paid
             </p>
             {invoice.paidBy && (

@@ -12,7 +12,6 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
     const [isVisible, setIsVisible] = useState(false);
 
     useEffect(() => {
-        // Trigger entrance animations after mount
         const timer = setTimeout(() => setIsVisible(true), 100);
         return () => clearTimeout(timer);
     }, []);
@@ -21,20 +20,17 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
         <div className="min-h-screen bg-black text-white overflow-x-hidden">
             {/* Navbar */}
             <nav
-                className="absolute top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-6 max-w-7xl mx-auto transition-all duration-700 ease-out"
-                style={{
-                    opacity: isVisible ? 1 : 0,
-                    transform: isVisible ? "translateY(0)" : "translateY(-20px)",
-                }}
+                className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-5 max-w-7xl mx-auto transition-opacity duration-500"
+                style={{ opacity: isVisible ? 1 : 0 }}
             >
                 <div className="flex items-center gap-2">
-                    <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-purple-600">
+                    <span className="text-xl font-semibold text-purple-400">
                         WarpSend
                     </span>
                 </div>
 
                 <div className="flex items-center gap-6">
-                    <div className="hidden md:flex items-center gap-6 text-sm font-medium text-gray-300">
+                    <div className="hidden md:flex items-center gap-6 text-sm text-gray-400">
                         <a href="#features" className="hover:text-white transition-colors">
                             Features
                         </a>
@@ -44,7 +40,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
                     </div>
                     <button
                         onClick={onGetStarted}
-                        className="px-5 py-2.5 bg-white/10 hover:bg-white/20 border border-white/10 rounded-full text-sm font-semibold transition-all backdrop-blur-sm"
+                        className="px-4 py-2 bg-purple-600 hover:bg-purple-500 rounded-lg text-sm font-medium transition-colors"
                     >
                         Launch App
                     </button>
@@ -52,150 +48,127 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
             </nav>
 
             {/* Hero Section */}
-            <header className="relative min-h-screen flex items-center justify-center overflow-hidden">
-                {/* Background Globe - fades in */}
+            <header className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16">
+                {/* Background Globe */}
                 <div
-                    className="absolute inset-0 flex items-center justify-center pointer-events-none transition-opacity duration-1000 ease-out"
-                    style={{
-                        opacity: isVisible ? 0.2 : 0,
-                    }}
+                    className="absolute inset-0 flex items-center justify-center pointer-events-none transition-opacity duration-700"
+                    style={{ opacity: isVisible ? 0.15 : 0 }}
                 >
-                    <Globe size={600} showArcs={true} autoRotate={true} />
+                    <Globe size={550} showArcs={true} autoRotate={true} />
                 </div>
 
-                {/* Gradient overlays */}
+                {/* Simple gradient overlay */}
                 <div className="absolute inset-0 bg-gradient-to-b from-black via-transparent to-black pointer-events-none" />
-                <div className="absolute inset-0 bg-gradient-to-r from-purple-900/20 via-transparent to-purple-900/20 pointer-events-none" />
 
                 {/* Content */}
-                <div className="relative z-10 text-center px-6 max-w-5xl mx-auto">
-                    {/* Badge - animation delay 0.2s */}
+                <div className="relative z-10 text-center px-6 max-w-4xl mx-auto">
+                    {/* Badge */}
                     <div
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-purple-500/30 bg-purple-500/10 text-purple-400 text-sm mb-8 transition-all duration-700 ease-out"
-                        style={{
-                            opacity: isVisible ? 1 : 0,
-                            transform: isVisible ? "translateY(0)" : "translateY(20px)",
-                            transitionDelay: "0.2s",
-                        }}
+                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-purple-500/30 bg-purple-500/10 text-purple-400 text-xs mb-6 transition-opacity duration-500"
+                        style={{ opacity: isVisible ? 1 : 0 }}
                     >
-                        <Zap className="w-4 h-4" />
+                        <Zap className="w-3 h-3" />
                         <span>Powered by Circle CCTP</span>
                     </div>
 
-                    {/* Main Heading - animation delay 0.4s */}
+                    {/* Main Heading */}
                     <h1
-                        className="font-bold tracking-tight text-white mb-6 transition-all duration-700 ease-out"
+                        className="font-bold text-white mb-5 transition-opacity duration-500"
                         style={{
-                            fontSize: "clamp(40px, 10vw, 80px)",
+                            fontSize: "clamp(36px, 8vw, 72px)",
                             lineHeight: 1.1,
                             opacity: isVisible ? 1 : 0,
-                            transform: isVisible ? "translateY(0)" : "translateY(30px)",
-                            transitionDelay: "0.4s",
                         }}
                     >
-                        Send Crypto
+                        Cross-Chain USDC
                         <br />
-                        <span className="text-purple-500">Anywhere, Instantly</span>
+                        <span className="text-purple-400">Made Simple</span>
                     </h1>
 
-                    {/* Subheading - animation delay 0.6s */}
+                    {/* Subheading */}
                     <p
-                        className="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto mb-10 transition-all duration-700 ease-out"
-                        style={{
-                            opacity: isVisible ? 1 : 0,
-                            transform: isVisible ? "translateY(0)" : "translateY(20px)",
-                            transitionDelay: "0.6s",
-                        }}
+                        className="text-base md:text-lg text-gray-400 max-w-xl mx-auto mb-8 transition-opacity duration-500 delay-100"
+                        style={{ opacity: isVisible ? 1 : 0 }}
                     >
-                        Transfer USDC across chains seamlessly. No bridges, no waiting.
-                        Just fast, secure cross-chain payments.
+                        Send USDC to any address on any chain. No bridging, no wrapped tokens.
+                        It just works.
                     </p>
 
-                    {/* CTA Buttons - animation delay 0.8s */}
+                    {/* CTA Buttons */}
                     <div
-                        className="flex flex-col sm:flex-row items-center justify-center gap-4 transition-all duration-700 ease-out"
-                        style={{
-                            opacity: isVisible ? 1 : 0,
-                            transform: isVisible ? "translateY(0)" : "translateY(20px)",
-                            transitionDelay: "0.8s",
-                        }}
+                        className="flex flex-col sm:flex-row items-center justify-center gap-3 transition-opacity duration-500 delay-200"
+                        style={{ opacity: isVisible ? 1 : 0 }}
                     >
                         <button
                             onClick={onGetStarted}
-                            className="group flex items-center gap-2 px-8 py-4 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-full transition-all hover:scale-105 shadow-lg shadow-purple-500/25"
+                            className="group flex items-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white font-medium rounded-lg transition-all"
                         >
                             Start Sending
-                            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                            <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
                         </button>
                         <a
                             href="#features"
-                            className="px-8 py-4 border border-white/20 hover:border-purple-500/50 hover:bg-purple-500/10 text-white font-semibold rounded-full transition-all"
+                            className="px-6 py-3 border border-white/20 hover:border-white/40 text-white font-medium rounded-lg transition-colors"
                         >
                             Learn More
                         </a>
                     </div>
                 </div>
 
-                {/* Scroll indicator - animation delay 1s */}
+                {/* Scroll indicator */}
                 <div
-                    className="absolute bottom-8 left-1/2 -translate-x-1/2 transition-all duration-700 ease-out"
-                    style={{
-                        opacity: isVisible ? 1 : 0,
-                        transform: isVisible
-                            ? "translateX(-50%) translateY(0)"
-                            : "translateX(-50%) translateY(20px)",
-                        transitionDelay: "1s",
-                    }}
+                    className="absolute bottom-6 left-1/2 -translate-x-1/2 transition-opacity duration-500 delay-300"
+                    style={{ opacity: isVisible ? 0.5 : 0 }}
                 >
-                    <div className="w-6 h-10 border-2 border-white/30 rounded-full flex justify-center pt-2 animate-bounce">
-                        <div className="w-1.5 h-3 bg-purple-500 rounded-full animate-pulse" />
+                    <div className="w-5 h-8 border border-white/30 rounded-full flex justify-center pt-1.5">
+                        <div className="w-1 h-2 bg-purple-400 rounded-full animate-pulse" />
                     </div>
                 </div>
             </header>
 
             {/* Features Section */}
-            <section id="features" className="py-24 px-6 bg-gradient-to-b from-black to-gray-950">
-                <div className="max-w-6xl mx-auto">
-                    <div className="text-center mb-16">
-                        <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                            Why Choose <span className="text-purple-500">WarpSend</span>?
+            <section id="features" className="py-20 px-6 bg-gradient-to-b from-black to-gray-950">
+                <div className="max-w-5xl mx-auto">
+                    <div className="text-center mb-12">
+                        <h2 className="text-2xl md:text-3xl font-bold mb-3">
+                            Why <span className="text-purple-400">WarpSend</span>?
                         </h2>
-                        <p className="text-gray-400 max-w-xl mx-auto">
-                            Experience the future of cross-chain payments with our cutting-edge technology.
+                        <p className="text-gray-500 max-w-lg mx-auto text-sm">
+                            Cross-chain payments without the usual headaches.
                         </p>
                     </div>
 
-                    <div className="grid md:grid-cols-3 gap-8">
+                    <div className="grid md:grid-cols-3 gap-6">
                         {/* Feature 1 */}
-                        <div className="p-8 rounded-2xl bg-gradient-to-br from-purple-900/20 to-transparent border border-purple-500/20 hover:border-purple-500/40 transition-colors">
-                            <div className="w-14 h-14 rounded-xl bg-purple-500/20 flex items-center justify-center mb-6">
-                                <Zap className="w-7 h-7 text-purple-400" />
+                        <div className="p-6 rounded-xl bg-white/[0.02] border border-white/5 hover:border-purple-500/30 transition-colors">
+                            <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center mb-4">
+                                <Zap className="w-5 h-5 text-purple-400" />
                             </div>
-                            <h3 className="text-xl font-semibold mb-3">Lightning Fast</h3>
-                            <p className="text-gray-400">
-                                Cross-chain transfers in seconds, not minutes. Powered by Circle's CCTP protocol.
+                            <h3 className="text-lg font-medium mb-2">Fast Transfers</h3>
+                            <p className="text-gray-500 text-sm">
+                                Seconds, not minutes. Circle CCTP handles the heavy lifting.
                             </p>
                         </div>
 
                         {/* Feature 2 */}
-                        <div className="p-8 rounded-2xl bg-gradient-to-br from-purple-900/20 to-transparent border border-purple-500/20 hover:border-purple-500/40 transition-colors">
-                            <div className="w-14 h-14 rounded-xl bg-purple-500/20 flex items-center justify-center mb-6">
-                                <Shield className="w-7 h-7 text-purple-400" />
+                        <div className="p-6 rounded-xl bg-white/[0.02] border border-white/5 hover:border-purple-500/30 transition-colors">
+                            <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center mb-4">
+                                <Shield className="w-5 h-5 text-purple-400" />
                             </div>
-                            <h3 className="text-xl font-semibold mb-3">Secure & Trusted</h3>
-                            <p className="text-gray-400">
-                                Built on battle-tested infrastructure. Your funds are always safe and secure.
+                            <h3 className="text-lg font-medium mb-2">Secure</h3>
+                            <p className="text-gray-500 text-sm">
+                                Native USDC, no wrapped tokens. Circle's attestation guarantees every transfer.
                             </p>
                         </div>
 
                         {/* Feature 3 */}
-                        <div className="p-8 rounded-2xl bg-gradient-to-br from-purple-900/20 to-transparent border border-purple-500/20 hover:border-purple-500/40 transition-colors">
-                            <div className="w-14 h-14 rounded-xl bg-purple-500/20 flex items-center justify-center mb-6">
-                                <Globe2 className="w-7 h-7 text-purple-400" />
+                        <div className="p-6 rounded-xl bg-white/[0.02] border border-white/5 hover:border-purple-500/30 transition-colors">
+                            <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center mb-4">
+                                <Globe2 className="w-5 h-5 text-purple-400" />
                             </div>
-                            <h3 className="text-xl font-semibold mb-3">Multi-Chain</h3>
-                            <p className="text-gray-400">
-                                Support for all major chains. Send USDC anywhere in the crypto ecosystem.
+                            <h3 className="text-lg font-medium mb-2">Multi-Chain</h3>
+                            <p className="text-gray-500 text-sm">
+                                Ethereum, Arbitrum, Base, and more. Send to any supported chain.
                             </p>
                         </div>
                     </div>
@@ -203,48 +176,48 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
             </section>
 
             {/* How It Works Section */}
-            <section id="how-it-works" className="py-24 px-6 bg-gray-950">
-                <div className="max-w-6xl mx-auto">
-                    <div className="text-center mb-16">
-                        <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                            How It <span className="text-purple-500">Works</span>
+            <section id="how-it-works" className="py-20 px-6 bg-gray-950">
+                <div className="max-w-5xl mx-auto">
+                    <div className="text-center mb-12">
+                        <h2 className="text-2xl md:text-3xl font-bold mb-3">
+                            How It <span className="text-purple-400">Works</span>
                         </h2>
-                        <p className="text-gray-400 max-w-xl mx-auto">
-                            Send cross-chain payments in three simple steps.
+                        <p className="text-gray-500 max-w-lg mx-auto text-sm">
+                            Three steps to send cross-chain payments.
                         </p>
                     </div>
 
                     <div className="grid md:grid-cols-3 gap-8">
                         {/* Step 1 */}
                         <div className="text-center">
-                            <div className="w-16 h-16 rounded-full bg-purple-600 flex items-center justify-center mx-auto mb-6 text-2xl font-bold">
+                            <div className="w-12 h-12 rounded-full bg-purple-600 flex items-center justify-center mx-auto mb-4 text-lg font-bold">
                                 1
                             </div>
-                            <h3 className="text-xl font-semibold mb-3">Connect Wallet</h3>
-                            <p className="text-gray-400">
-                                Connect your favorite wallet to get started. We support all major wallets.
+                            <h3 className="text-lg font-medium mb-2">Connect</h3>
+                            <p className="text-gray-500 text-sm">
+                                Connect your wallet. We support MetaMask, WalletConnect, and more.
                             </p>
                         </div>
 
                         {/* Step 2 */}
                         <div className="text-center">
-                            <div className="w-16 h-16 rounded-full bg-purple-600 flex items-center justify-center mx-auto mb-6 text-2xl font-bold">
+                            <div className="w-12 h-12 rounded-full bg-purple-600 flex items-center justify-center mx-auto mb-4 text-lg font-bold">
                                 2
                             </div>
-                            <h3 className="text-xl font-semibold mb-3">Enter Details</h3>
-                            <p className="text-gray-400">
-                                Enter the recipient address, choose the destination chain, and set the amount.
+                            <h3 className="text-lg font-medium mb-2">Enter Details</h3>
+                            <p className="text-gray-500 text-sm">
+                                Recipient address, destination chain, and amount. ENS names work too.
                             </p>
                         </div>
 
                         {/* Step 3 */}
                         <div className="text-center">
-                            <div className="w-16 h-16 rounded-full bg-purple-600 flex items-center justify-center mx-auto mb-6 text-2xl font-bold">
+                            <div className="w-12 h-12 rounded-full bg-purple-600 flex items-center justify-center mx-auto mb-4 text-lg font-bold">
                                 3
                             </div>
-                            <h3 className="text-xl font-semibold mb-3">Send & Done</h3>
-                            <p className="text-gray-400">
-                                Confirm the transaction and watch your USDC arrive on the destination chain.
+                            <h3 className="text-lg font-medium mb-2">Send</h3>
+                            <p className="text-gray-500 text-sm">
+                                Confirm the transaction. USDC arrives on the destination chain.
                             </p>
                         </div>
                     </div>
@@ -252,31 +225,31 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
             </section>
 
             {/* CTA Section */}
-            <section className="py-24 px-6 bg-gradient-to-t from-purple-900/30 to-gray-950">
-                <div className="max-w-4xl mx-auto text-center">
-                    <h2 className="text-3xl md:text-5xl font-bold mb-6">
-                        Ready to <span className="text-purple-500">WarpSend</span>?
+            <section className="py-20 px-6 bg-gradient-to-t from-purple-900/20 to-gray-950">
+                <div className="max-w-3xl mx-auto text-center">
+                    <h2 className="text-2xl md:text-4xl font-bold mb-4">
+                        Ready to try <span className="text-purple-400">WarpSend</span>?
                     </h2>
-                    <p className="text-xl text-gray-400 mb-10">
-                        Join thousands of users sending cross-chain payments effortlessly.
+                    <p className="text-gray-400 mb-8">
+                        Start sending cross-chain payments today.
                     </p>
                     <button
                         onClick={onGetStarted}
-                        className="group inline-flex items-center gap-2 px-10 py-5 bg-purple-600 hover:bg-purple-700 text-white text-lg font-semibold rounded-full transition-all hover:scale-105 shadow-lg shadow-purple-500/25"
+                        className="group inline-flex items-center gap-2 px-8 py-4 bg-purple-600 hover:bg-purple-500 text-white font-medium rounded-lg transition-all"
                     >
-                        <Wallet className="w-6 h-6" />
+                        <Wallet className="w-5 h-5" />
                         Launch App
-                        <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                        <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
                     </button>
                 </div>
             </section>
 
             {/* Footer */}
-            <footer className="py-8 px-6 border-t border-white/10">
-                <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-                    <div className="text-purple-500 font-bold text-xl">WarpSend</div>
-                    <p className="text-gray-500 text-sm">
-                        © 2026 WarpSend. Built with ❤️ for the crypto community.
+            <footer className="py-6 px-6 border-t border-white/5">
+                <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
+                    <div className="text-purple-400 font-semibold">WarpSend</div>
+                    <p className="text-gray-600 text-xs">
+                        © 2026 WarpSend
                     </p>
                 </div>
             </footer>

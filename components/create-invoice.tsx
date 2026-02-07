@@ -46,12 +46,12 @@ export function CreateInvoice({ onCreated }: CreateInvoiceProps) {
       });
 
       const paymentLink = getPaymentLink(invoice.id);
-      
+
       // Copy to clipboard
       await navigator.clipboard.writeText(paymentLink);
-      
+
       toast.success("Invoice created! Payment link copied to clipboard.");
-      
+
       setAmount("");
       setDescription("");
       onCreated?.();
@@ -65,8 +65,8 @@ export function CreateInvoice({ onCreated }: CreateInvoiceProps) {
 
   if (!isConnected) {
     return (
-      <Card>
-        <CardContent className="py-8 text-center text-muted-foreground">
+      <Card className="bg-white/[0.02] border-purple-500/20 backdrop-blur-sm">
+        <CardContent className="py-8 text-center text-gray-400">
           Connect your wallet to create invoices
         </CardContent>
       </Card>
@@ -74,7 +74,7 @@ export function CreateInvoice({ onCreated }: CreateInvoiceProps) {
   }
 
   return (
-    <Card>
+    <Card className="bg-white/[0.02] border-purple-500/20 backdrop-blur-sm">
       <CardHeader>
         <CardTitle>Create Invoice</CardTitle>
         <CardDescription>

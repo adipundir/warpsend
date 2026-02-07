@@ -11,14 +11,13 @@ export function LandingHero({ isVisible = false }: LandingHeroProps) {
         <div className="relative flex items-center justify-center w-full h-full">
             {/* Background Globe */}
             <div
-                className="absolute opacity-30"
+                className="absolute opacity-20"
                 style={{
-                    transform: "translateX(30px) translateY(-20px)",
-                    transition: "opacity 1s ease-out",
-                    opacity: isVisible ? 0.3 : 0,
+                    transition: "opacity 0.8s ease-out",
+                    opacity: isVisible ? 0.2 : 0,
                 }}
             >
-                <Globe size={300} showArcs={true} autoRotate={true} />
+                <Globe size={280} showArcs={true} autoRotate={true} />
             </div>
 
             {/* Main Text */}
@@ -27,63 +26,43 @@ export function LandingHero({ isVisible = false }: LandingHeroProps) {
                 style={{
                     opacity: isVisible ? 1 : 0,
                     transform: isVisible ? "translateY(0)" : "translateY(20px)",
-                    transition: "all 0.8s ease-out 0.3s",
+                    transition: "all 0.6s ease-out 0.2s",
                 }}
             >
-                {/* WARPSEND Logo with Globe as O */}
+                {/* Logo */}
                 <h1
-                    className="font-bold tracking-tight text-purple-500"
+                    className="font-bold tracking-tight text-purple-400"
                     style={{
-                        fontSize: "clamp(48px, 12vw, 140px)",
-                        fontFamily: "system-ui, -apple-system, sans-serif",
-                        fontWeight: 800,
+                        fontSize: "clamp(44px, 10vw, 120px)",
+                        fontWeight: 700,
                         letterSpacing: "-0.02em",
                     }}
                 >
-                    <span>WARP</span>
-                    <span className="relative inline-block">
-                        {/* Globe as the 'S' background */}
-                        <span className="relative">
-                            S
-                            <span
-                                className="absolute inset-0 flex items-center justify-center"
-                                style={{
-                                    transform: "scale(1.2)",
-                                    opacity: 0.6,
-                                }}
-                            >
-                                <Globe size={80} showArcs={false} autoRotate={true} />
-                            </span>
-                        </span>
-                    </span>
-                    <span>END</span>
+                    WarpSend
                 </h1>
 
                 {/* Tagline */}
                 <p
-                    className="mt-6 text-purple-400/80 text-lg md:text-xl max-w-md mx-auto"
+                    className="mt-4 text-purple-400/60 text-base md:text-lg"
                     style={{
                         opacity: isVisible ? 1 : 0,
-                        transform: isVisible ? "translateY(0)" : "translateY(10px)",
-                        transition: "all 0.8s ease-out 0.6s",
+                        transition: "opacity 0.6s ease-out 0.5s",
                     }}
                 >
-                    Send crypto anywhere, instantly
+                    Cross-chain USDC, simplified
                 </p>
 
                 {/* CTA Button */}
                 <div
-                    className="mt-8"
+                    className="mt-6"
                     style={{
                         opacity: isVisible ? 1 : 0,
-                        transform: isVisible ? "translateY(0)" : "translateY(10px)",
-                        transition: "all 0.8s ease-out 0.9s",
+                        transition: "opacity 0.6s ease-out 0.7s",
                     }}
                 >
                     <button
-                        className="px-8 py-4 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-full transition-all hover:scale-105 shadow-lg shadow-purple-500/25"
+                        className="px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white font-medium rounded-lg transition-colors"
                         onClick={() => {
-                            // Navigate to main app
                             window.location.href = "#app";
                         }}
                     >

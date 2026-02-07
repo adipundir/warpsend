@@ -41,7 +41,7 @@ export function LoadingCounter({
         <div className="flex items-center justify-center w-full h-full relative">
             {/* Loading text */}
             <div
-                className="absolute left-12 bottom-12 text-purple-500 text-sm tracking-widest font-mono"
+                className="absolute left-12 bottom-12 text-primary text-sm tracking-widest font-mono"
                 style={{
                     opacity: isComplete ? 0 : 1,
                     transition: "opacity 0.3s ease-out",
@@ -52,7 +52,7 @@ export function LoadingCounter({
 
             {/* Counter */}
             <div
-                className="text-purple-500 font-bold select-none"
+                className="text-primary font-bold select-none"
                 style={{
                     fontSize: "clamp(80px, 20vw, 200px)",
                     fontStyle: "italic",

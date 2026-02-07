@@ -4,9 +4,10 @@ import { ConnectButton } from "@rainbow-me/rainbowkit";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const navItems = [
-  { href: "/", label: "Send" },
+  { href: "/send", label: "Send" },
   { href: "/balance", label: "Balance" },
   { href: "/invoices", label: "Invoices" },
 ];
@@ -14,12 +15,17 @@ const navItems = [
 export function Header() {
   const pathname = usePathname();
 
+  // Don't show header on landing page
+  if (pathname === "/") {
+    return null;
+  }
+
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-white/5 bg-black/80 backdrop-blur-md">
+    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-md">
       <div className="container flex h-14 items-center justify-between px-4 md:px-8">
         <div className="flex items-center gap-6">
           <Link href="/" className="flex items-center gap-2">
-            <span className="text-lg font-semibold text-purple-400">WarpSend</span>
+            <span className="text-lg font-semibold text-primary">WarpSend</span>
           </Link>
           <nav className="hidden md:flex items-center gap-1">
             {navItems.map((item) => (
@@ -29,8 +35,8 @@ export function Header() {
                 className={cn(
                   "px-3 py-1.5 text-sm font-medium rounded-md transition-colors",
                   pathname === item.href
-                    ? "bg-purple-500/20 text-purple-400"
-                    : "text-gray-400 hover:text-white hover:bg-white/5"
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:text-foreground hover:bg-accent"
                 )}
               >
                 {item.label}
@@ -38,14 +44,17 @@ export function Header() {
             ))}
           </nav>
         </div>
-        <ConnectButton
-          showBalance={false}
-          chainStatus="icon"
-          accountStatus={{
-            smallScreen: "avatar",
-            largeScreen: "full",
-          }}
-        />
+        <div className="flex items-center gap-4">
+          <ThemeToggle />
+          <ConnectButton
+            showBalance={false}
+            chainStatus="icon"
+            accountStatus={{
+              smallScreen: "avatar",
+              largeScreen: "full",
+            }}
+          />
+        </div>
       </div>
     </header>
   );

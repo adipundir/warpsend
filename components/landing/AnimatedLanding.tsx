@@ -41,7 +41,7 @@ export function AnimatedLanding({ onComplete }: AnimatedLandingProps) {
 
     return (
         <div
-            className="fixed inset-0 bg-black flex items-center justify-center overflow-hidden"
+            className="fixed inset-0 bg-background flex items-center justify-center overflow-hidden"
             style={{ zIndex: 50 }}
         >
             {/* Loading Phase */}
@@ -98,7 +98,7 @@ export function AnimatedLanding({ onComplete }: AnimatedLandingProps) {
                         setPhase("complete");
                         onComplete?.();
                     }}
-                    className="absolute bottom-8 right-8 text-purple-500/50 hover:text-purple-500 text-sm transition-colors"
+                    className="absolute bottom-8 right-8 text-primary/50 hover:text-primary text-sm transition-colors"
                 >
                     Skip →
                 </button>

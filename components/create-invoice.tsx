@@ -65,8 +65,8 @@ export function CreateInvoice({ onCreated }: CreateInvoiceProps) {
 
   if (!isConnected) {
     return (
-      <Card className="bg-white/[0.02] border-purple-500/20 backdrop-blur-sm">
-        <CardContent className="py-8 text-center text-gray-400">
+      <Card className="border-primary/20">
+        <CardContent className="py-8 text-center text-muted-foreground">
           Connect your wallet to create invoices
         </CardContent>
       </Card>
@@ -74,7 +74,7 @@ export function CreateInvoice({ onCreated }: CreateInvoiceProps) {
   }
 
   return (
-    <Card className="bg-white/[0.02] border-purple-500/20 backdrop-blur-sm">
+    <Card className="border-primary/20">
       <CardHeader>
         <CardTitle>Create Invoice</CardTitle>
         <CardDescription>

@@ -14,8 +14,8 @@ export default function InvoicesPage() {
   return (
     <div className="flex flex-col items-center py-8">
       <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold mb-2 text-white">Invoices & Payment Links</h1>
-        <p className="text-gray-400 max-w-md">
+        <h1 className="text-3xl font-bold mb-2 text-foreground">Invoices & Payment Links</h1>
+        <p className="text-muted-foreground max-w-md">
           Create payment links to receive USDC from anyone on any chain.
         </p>
       </div>

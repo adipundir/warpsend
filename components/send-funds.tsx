@@ -319,7 +319,7 @@ export function SendFunds() {
   };
 
   return (
-    <Card className="w-full max-w-lg bg-white/[0.02] border-purple-500/20 backdrop-blur-sm">
+    <Card className="w-full max-w-lg border-primary/20">
       <CardHeader>
         <CardTitle>Send USDC</CardTitle>
         <CardDescription>

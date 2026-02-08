@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useAccount } from "wagmi";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { UnifiedBalance } from "@/components/unified-balance";
 import { SendFlow } from "@/components/send-flow";
 import { ReceiveFlow } from "@/components/receive-flow";
@@ -30,8 +31,14 @@ export default function AppPage() {
             <p className="text-muted-foreground">Loading…</p>
           </div>
         ) : showConnectPrompt ? (
-          <div className="rounded-2xl border border-border/60 bg-card/50 dark:bg-white/[0.02] p-8 md:p-12 text-center">
-            <p className="text-foreground font-medium">Connect your wallet to access the app.</p>
+          <div className="rounded-2xl border border-border/60 bg-card/50 dark:bg-white/[0.02] p-8 md:p-12 flex flex-col items-center justify-center text-center max-w-md mx-auto">
+            <h2 className="text-lg font-semibold text-foreground mb-1">Connect your wallet</h2>
+            <p className="text-sm text-muted-foreground mb-6">Connect to view your balance, deposit, send, and receive USDC.</p>
+            <ConnectButton
+              showBalance={false}
+              chainStatus="icon"
+              accountStatus="full"
+            />
           </div>
         ) : (
         <>

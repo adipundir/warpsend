@@ -136,9 +136,6 @@ export function ReceiveFlow({ onClose }: { onClose?: () => void }) {
         /* Form to Generate QR */
         <div className="space-y-5">
           <div className="text-center">
-            <div className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center mb-3">
-              <QrCode className="w-8 h-8 text-primary" />
-            </div>
             <h3 className="text-lg font-semibold mb-2">Request Payment</h3>
             <p className="text-muted-foreground text-sm">
               Generate a QR code that anyone can scan to pay you

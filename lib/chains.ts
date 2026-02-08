@@ -204,17 +204,17 @@ export function isGatewaySupported(chainId: number): boolean {
   return GATEWAY_DOMAINS[chainId] !== undefined;
 }
 
-// Chain icon URLs (WalletConnect explorer uses eip155:chainId; custom for Arc)
+// Chain icon URLs (local assets in public/logos take precedence)
 export function getChainIconUrl(chainId: number): string {
   return `https://explorer-api.walletconnect.com/v3/logo?chainId=eip155:${chainId}`;
 }
 export const CHAIN_ICON_URLS: Record<number, string> = {
-  [arcTestnet.id]: "https://testnet.arcscan.app/favicon.ico",
-  [sepolia.id]: getChainIconUrl(sepolia.id),
-  [baseSepolia.id]: getChainIconUrl(baseSepolia.id),
-  [avalancheFuji.id]: getChainIconUrl(avalancheFuji.id),
+  [arcTestnet.id]: "/logos/arc.png",
+  [sepolia.id]: "/logos/eth.svg",
+  [baseSepolia.id]: "/logos/base.png",
+  [avalancheFuji.id]: "/logos/evalanche.png",
   [sonicTestnet.id]: getChainIconUrl(sonicTestnet.id),
   [worldchainSepolia.id]: getChainIconUrl(worldchainSepolia.id),
-  [hyperliquidEvmTestnet.id]: getChainIconUrl(hyperliquidEvmTestnet.id),
-  [seiTestnet.id]: getChainIconUrl(seiTestnet.id),
+  [hyperliquidEvmTestnet.id]: "/logos/hyperevm.png",
+  [seiTestnet.id]: "/logos/sei.png",
 };

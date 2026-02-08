@@ -29,7 +29,6 @@ export function SendFlow({ onClose }: { onClose?: () => void }) {
   const [txStep, setTxStep] = useState<TxStep>("idle");
   const [scanning, setScanning] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
-  const [manualEntry, setManualEntry] = useState(false);
   const [scannedData, setScannedData] = useState<{
     address: string;
     amount: string;
@@ -136,7 +135,6 @@ export function SendFlow({ onClose }: { onClose?: () => void }) {
       chainName: chain?.name || "Unknown",
     });
     setDestChainId(chainId);
-    setManualEntry(false);
   };
 
   const handleSend = async () => {
@@ -289,41 +287,47 @@ export function SendFlow({ onClose }: { onClose?: () => void }) {
 
   return (
     <div>
-      {/* QR Scanner */}
-      {scanning && (
-        <div className="space-y-4">
-          <div className="text-center mb-4">
-            <h3 className="text-lg font-semibold">Scan Payment QR</h3>
-            <p className="text-sm text-muted-foreground">Point your camera at a WarpSend QR code</p>
+      {/* Split: left = scan (blur until Scan clicked) | right = form — when idle and no scannedData yet */}
+      {!scannedData && txStep === "idle" && (
+        <div className="flex flex-col md:flex-row gap-4 md:gap-6">
+          {/* Left: camera placeholder (blur glass) until Scan clicked, then camera feed */}
+          <div className="w-full md:min-w-[240px] md:max-w-[280px] flex flex-col gap-3">
+            {!scanning ? (
+              <button
+                type="button"
+                onClick={handleScanQR}
+                className="min-h-[220px] md:min-h-[260px] w-full rounded-xl border border-border/60 bg-card/30 backdrop-blur-xl flex flex-col items-center justify-center gap-2 text-muted-foreground hover:bg-card/50 hover:border-border hover:text-foreground transition-colors"
+              >
+                <span className="text-sm font-medium">Scan QR</span>
+                <span className="text-xs text-center px-4">Point camera at a WarpSend payment QR</span>
+              </button>
+            ) : (
+              <>
+                <div id="qr-reader" className="w-full rounded-xl overflow-hidden bg-black min-h-[220px] md:min-h-[260px]" />
+                {cameraError && (
+                  <p className="text-xs text-muted-foreground text-center">{cameraError}</p>
+                )}
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => handleCancelScan()}
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 rounded-xl h-10"
+                  >
+                    <PenLine className="w-4 h-4 mr-1.5 shrink-0" />
+                    Enter manually
+                  </Button>
+                  <Button onClick={handleCancelScan} variant="ghost" size="sm" className="rounded-xl h-10">
+                    Stop
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
-          <div id="qr-reader" className="w-full rounded-xl overflow-hidden bg-black min-h-[250px]" />
-          {cameraError && (
-            <p className="text-sm text-muted-foreground text-center">{cameraError}</p>
-          )}
-          <div className="flex gap-2">
-            <Button
-              onClick={() => { handleCancelScan(); setManualEntry(true); }}
-              variant="outline"
-              className="flex-1 rounded-xl h-12"
-            >
-              <PenLine className="w-4 h-4 mr-2 shrink-0" />
-              Enter manually
-            </Button>
-            <Button onClick={handleCancelScan} variant="ghost" className="rounded-xl h-12">
-              Cancel
-            </Button>
-          </div>
-        </div>
-      )}
 
-      {/* Manual entry: recipient, amount, destination chain */}
-      {manualEntry && !scannedData && txStep === "idle" && (
-        <div className="space-y-4">
-          <div className="text-center mb-2">
-            <h3 className="text-lg font-semibold">Enter payment details</h3>
-          </div>
-          <div className="space-y-3">
-            <div className="space-y-1">
+          {/* Right: form fields (filled by scan or manually) */}
+          <div className="flex-1 min-w-0 space-y-4">
+            <div className="space-y-3">
               <Label className="text-sm">Recipient address or ENS name</Label>
               <Input
                 placeholder="0x... or name.eth"
@@ -344,8 +348,8 @@ export function SendFlow({ onClose }: { onClose?: () => void }) {
             </div>
             <div className="space-y-2">
               <Label className="text-sm">Destination chain</Label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                {supportedChains
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {[...supportedChains]
                   .filter((c) => isGatewaySupported(c.id))
                   .sort((a, b) => (a.id === arcTestnet.id ? -1 : b.id === arcTestnet.id ? 1 : 0))
                   .map((chain) => {
@@ -383,17 +387,8 @@ export function SendFlow({ onClose }: { onClose?: () => void }) {
                   })}
               </div>
             </div>
-          </div>
-          <div className="flex gap-2">
-            <Button onClick={handleManualContinue} className="flex-1 h-12 rounded-xl">
+            <Button onClick={handleManualContinue} className="w-full h-12 rounded-xl">
               Continue
-            </Button>
-            <Button
-              variant="outline"
-              className="h-12 rounded-xl"
-              onClick={() => { setManualEntry(false); setRecipient(""); setAmount(""); setDestChainId(arcTestnet.id.toString()); }}
-            >
-              Back
             </Button>
           </div>
         </div>
@@ -448,7 +443,7 @@ export function SendFlow({ onClose }: { onClose?: () => void }) {
                 <div className="flex flex-col gap-2 w-full">
                   <div className="flex gap-2">
                     <Button
-                      onClick={() => { setScannedData(null); setManualEntry(true); }}
+                      onClick={() => setScannedData(null)}
                       variant="ghost"
                       className="flex-1 rounded-xl"
                     >
@@ -533,42 +528,6 @@ export function SendFlow({ onClose }: { onClose?: () => void }) {
         </div>
       )}
 
-      {/* Initial State - Scan or Enter manually */}
-      {!scanning && !manualEntry && !scannedData && txStep === "idle" && (
-        <div className="text-center space-y-5">
-          <div className="py-4">
-            <div className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center mb-3">
-              <ScanLine className="w-8 h-8 text-primary" />
-            </div>
-            <h3 className="text-lg font-semibold mb-2">Send USDC</h3>
-            <p className="text-sm text-muted-foreground max-w-xs mx-auto">
-              Scan a WarpSend QR code or enter payment details manually
-            </p>
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <Button
-              onClick={handleScanQR}
-              className="w-full h-12 rounded-xl text-sm font-semibold min-h-[48px]"
-            >
-              <ScanLine className="w-4 h-4 mr-2 shrink-0" />
-              Scan QR Code
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full h-12 rounded-xl text-sm font-medium min-h-[48px]"
-              onClick={() => {
-                if (!destChainId) setDestChainId(arcTestnet.id.toString());
-                setManualEntry(true);
-              }}
-            >
-              <PenLine className="w-4 h-4 mr-2 shrink-0" />
-              Enter manually
-            </Button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

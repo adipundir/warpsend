@@ -77,7 +77,7 @@ export function SendFlow({ onClose }: { onClose?: () => void }) {
             toast.error("Invalid QR code format");
           }
         },
-        () => {}
+        () => { }
       )
       .catch((err: Error) => {
         console.error("QR scan error:", err);
@@ -90,7 +90,7 @@ export function SendFlow({ onClose }: { onClose?: () => void }) {
 
     return () => {
       try {
-        html5QrCode.stop().catch(() => {});
+        html5QrCode.stop().catch(() => { });
       } catch {
         // Scanner may already be stopped (e.g. after successful scan)
       }
@@ -107,7 +107,7 @@ export function SendFlow({ onClose }: { onClose?: () => void }) {
   const handleCancelScan = () => {
     setScanning(false);
     setCameraError(null);
-    scannerRef.current?.stop().catch(() => {});
+    scannerRef.current?.stop().catch(() => { });
     scannerRef.current = null;
   };
 
@@ -165,7 +165,7 @@ export function SendFlow({ onClose }: { onClose?: () => void }) {
 
     const destinationChainId = parseInt(effectiveDestChainId, 10);
     const destinationChain = supportedChains.find((c) => c.id === destinationChainId);
-    
+
     if (!destinationChain || !isGatewaySupported(destinationChainId)) {
       toast.error("Destination chain not supported");
       return;
@@ -196,7 +196,7 @@ export function SendFlow({ onClose }: { onClose?: () => void }) {
 
     try {
       setTxStep("signing");
-      
+
       const burnIntent = createBurnIntent({
         sourceChainId: connectedChainId!,
         destinationChainId,
@@ -349,7 +349,7 @@ export function SendFlow({ onClose }: { onClose?: () => void }) {
             </div>
             <div className="space-y-2">
               <Label className="text-sm">Destination chain</Label>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-2 max-h-[280px] overflow-y-auto pr-1">
                 {[...supportedChains]
                   .filter((c) => isGatewaySupported(c.id))
                   .sort((a, b) => (a.id === arcTestnet.id ? -1 : b.id === arcTestnet.id ? 1 : 0))
@@ -362,29 +362,28 @@ export function SendFlow({ onClose }: { onClose?: () => void }) {
                         key={chain.id}
                         type="button"
                         onClick={() => setDestChainId(chain.id.toString())}
-                        className={`flex items-center gap-3 p-3 rounded-xl border transition-all min-h-[56px] text-left ${
-                          isSelected
+                        className={`flex items-center gap-2 p-2 rounded-lg border transition-all text-left ${isSelected
                             ? "border-primary bg-primary/10 ring-1 ring-primary/20"
                             : "border-border/60 bg-secondary/30 hover:border-border hover:bg-secondary/50"
-                        }`}
+                          }`}
                       >
-                        <div className="w-10 h-10 rounded-xl bg-background flex items-center justify-center overflow-hidden shrink-0">
+                        <div className="w-8 h-8 rounded-lg bg-background flex items-center justify-center overflow-hidden shrink-0">
                           {iconUrl ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img src={iconUrl} alt="" className="w-full h-full object-cover" />
                           ) : (
-                            <span className="text-sm font-semibold text-muted-foreground">
+                            <span className="text-xs font-semibold text-muted-foreground">
                               {chain.name.charAt(0)}
                             </span>
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-foreground">{chain.name}</p>
+                          <p className="text-xs font-medium text-foreground truncate">{chain.name}</p>
                           {info?.attestationTime && (
-                            <p className="text-xs text-muted-foreground">{info.attestationTime}</p>
+                            <p className="text-[10px] text-muted-foreground truncate">{info.attestationTime}</p>
                           )}
                         </div>
-                        {isSelected && <Check className="w-4 h-4 text-primary shrink-0" />}
+                        {isSelected && <Check className="w-3 h-3 text-primary shrink-0" />}
                       </button>
                     );
                   })}
@@ -400,78 +399,78 @@ export function SendFlow({ onClose }: { onClose?: () => void }) {
       {/* Scanned Payment Details */}
       {!scanning && scannedData && txStep !== "success" && (
         <div className="space-y-6">
-            <div className="text-center">
-              <h3 className="text-lg font-semibold mb-1">Payment Request</h3>
-              <p className="text-sm text-muted-foreground">Review and confirm the payment</p>
-            </div>
+          <div className="text-center">
+            <h3 className="text-lg font-semibold mb-1">Payment Request</h3>
+            <p className="text-sm text-muted-foreground">Review and confirm the payment</p>
+          </div>
 
-            <div className="p-6 rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/10 text-center">
-              <p className="text-sm text-muted-foreground mb-2">Amount</p>
-              <p className="text-4xl font-bold tabular-nums mb-1">{scannedData.amount}</p>
-              <p className="text-lg text-muted-foreground">USDC</p>
-            </div>
+          <div className="p-6 rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/10 text-center">
+            <p className="text-sm text-muted-foreground mb-2">Amount</p>
+            <p className="text-4xl font-bold tabular-nums mb-1">{scannedData.amount}</p>
+            <p className="text-lg text-muted-foreground">USDC</p>
+          </div>
 
-            <div className="space-y-3">
-              <div className="flex justify-between items-center p-4 rounded-xl bg-secondary/30">
-                <span className="text-sm text-muted-foreground">To</span>
-                <span className="text-sm font-mono">
-                  {scannedData.address.slice(0, 8)}...{scannedData.address.slice(-6)}
-                </span>
-              </div>
-              <div className="flex justify-between items-center p-4 rounded-xl bg-secondary/30">
-                <span className="text-sm text-muted-foreground">Chain</span>
-                <span className="text-sm font-medium">{scannedData.chainName}</span>
-              </div>
+          <div className="space-y-3">
+            <div className="flex justify-between items-center p-4 rounded-xl bg-secondary/30">
+              <span className="text-sm text-muted-foreground">To</span>
+              <span className="text-sm font-mono">
+                {scannedData.address.slice(0, 8)}...{scannedData.address.slice(-6)}
+              </span>
             </div>
+            <div className="flex justify-between items-center p-4 rounded-xl bg-secondary/30">
+              <span className="text-sm text-muted-foreground">Chain</span>
+              <span className="text-sm font-medium">{scannedData.chainName}</span>
+            </div>
+          </div>
 
-            <div className="space-y-3">
-              <Button
-                onClick={handleSend}
-                disabled={txStep !== "idle"}
-                className="w-full h-12 rounded-xl text-sm font-semibold min-h-[48px]"
-              >
-                {txStep === "idle" && (
-                  <>
-                    <Send className="w-5 h-5 mr-2" />
-                    Send {scannedData.amount} USDC
-                  </>
-                )}
-                {txStep === "signing" && "Signing..."}
-                {txStep === "requesting" && "Getting attestation..."}
-                {txStep === "switching" && "Switching chain..."}
-                {txStep === "minting" && "Minting..."}
-              </Button>
-              
+          <div className="space-y-3">
+            <Button
+              onClick={handleSend}
+              disabled={txStep !== "idle"}
+              className="w-full h-12 rounded-xl text-sm font-semibold min-h-[48px]"
+            >
               {txStep === "idle" && (
-                <div className="flex flex-col gap-2 w-full">
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={() => setScannedData(null)}
-                      variant="ghost"
-                      className="flex-1 rounded-xl"
-                    >
-                      Change details
-                    </Button>
-                    <Button
-                      onClick={handleReset}
-                      variant="ghost"
-                      className="flex-1 rounded-xl"
-                    >
-                      Scan different QR
-                    </Button>
-                  </div>
-                  {onClose && (
-                    <Button
-                      onClick={onClose}
-                      variant="outline"
-                      className="w-full rounded-xl"
-                    >
-                      Close
-                    </Button>
-                  )}
-                </div>
+                <>
+                  <Send className="w-5 h-5 mr-2" />
+                  Send {scannedData.amount} USDC
+                </>
               )}
-            </div>
+              {txStep === "signing" && "Signing..."}
+              {txStep === "requesting" && "Getting attestation..."}
+              {txStep === "switching" && "Switching chain..."}
+              {txStep === "minting" && "Minting..."}
+            </Button>
+
+            {txStep === "idle" && (
+              <div className="flex flex-col gap-2 w-full">
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => setScannedData(null)}
+                    variant="ghost"
+                    className="flex-1 rounded-xl"
+                  >
+                    Change details
+                  </Button>
+                  <Button
+                    onClick={handleReset}
+                    variant="ghost"
+                    className="flex-1 rounded-xl"
+                  >
+                    Scan different QR
+                  </Button>
+                </div>
+                {onClose && (
+                  <Button
+                    onClick={onClose}
+                    variant="outline"
+                    className="w-full rounded-xl"
+                  >
+                    Close
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       )}
 

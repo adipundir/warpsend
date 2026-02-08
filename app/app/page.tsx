@@ -82,7 +82,7 @@ export default function AppPage() {
                 </div>
               </div>
 
-              <Modal open={sendModalOpen} onClose={() => setSendModalOpen(false)}>
+              <Modal open={sendModalOpen} onClose={() => setSendModalOpen(false)} className="sm:max-w-3xl">
                 <SendFlow onClose={() => setSendModalOpen(false)} />
               </Modal>
 

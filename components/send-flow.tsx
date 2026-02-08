@@ -10,7 +10,7 @@ import { type Address, type Hex, isAddress } from "viem";
 import { supportedChains, GATEWAY_MINTER_ADDRESS, getChainInfo, isGatewaySupported, arcTestnet, CHAIN_ICON_URLS, getChainIconUrl } from "@/lib/chains";
 import { resolveEnsToAddress, looksLikeEnsName } from "@/lib/ens";
 import { GATEWAY_MINTER_ABI, createBurnIntent, createBurnIntentTypedData, requestGatewayTransfer, getGatewayBalances } from "@/lib/gateway";
-import { ScanLine, Send, CheckCircle2, PenLine, Check, ExternalLink } from "lucide-react";
+import { ScanLine, Send, CheckCircle2, Check, ExternalLink } from "lucide-react";
 import { Html5Qrcode } from "html5-qrcode";
 
 type TxStep = "idle" | "signing" | "requesting" | "switching" | "minting" | "success";
@@ -290,9 +290,9 @@ export function SendFlow({ onClose }: { onClose?: () => void }) {
     <div>
       {/* Split: left = scan (blur until Scan clicked) | right = form — when idle and no scannedData yet */}
       {!scannedData && txStep === "idle" && (
-        <div className="flex flex-col md:flex-row gap-4 md:gap-6">
+        <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-6">
           {/* Left: camera placeholder (blur glass) until Scan clicked, then camera feed */}
-          <div className="w-full md:min-w-[240px] md:max-w-[280px] flex flex-col gap-3">
+          <div className="w-full md:min-w-[240px] md:max-w-[280px] flex flex-col gap-3 md:justify-center">
             {!scanning ? (
               <button
                 type="button"
@@ -309,15 +309,6 @@ export function SendFlow({ onClose }: { onClose?: () => void }) {
                   <p className="text-xs text-muted-foreground text-center">{cameraError}</p>
                 )}
                 <div className="flex gap-2">
-                  <Button
-                    onClick={() => handleCancelScan()}
-                    variant="outline"
-                    size="sm"
-                    className="flex-1 rounded-xl h-10"
-                  >
-                    <PenLine className="w-4 h-4 mr-1.5 shrink-0" />
-                    Enter manually
-                  </Button>
                   <Button onClick={handleCancelScan} variant="ghost" size="sm" className="rounded-xl h-10">
                     Stop
                   </Button>

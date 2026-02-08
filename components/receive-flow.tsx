@@ -2,31 +2,27 @@
 
 import { useState } from "react";
 import { useAccount } from "wagmi";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { supportedChains, getChainInfo } from "@/lib/chains";
+import { supportedChains, getChainInfo, isGatewaySupported, arcTestnet } from "@/lib/chains";
 import { QRCodeSVG } from "qrcode.react";
-import { Copy, Download, QrCode } from "lucide-react";
+import { Copy, Download, QrCode, RefreshCw } from "lucide-react";
 
 export function ReceiveFlow() {
   const { address, isConnected } = useAccount();
   
-  const [useConnectedWallet, setUseConnectedWallet] = useState(true);
-  const [recipientAddress, setRecipientAddress] = useState("");
   const [amount, setAmount] = useState("");
-  const [chainId, setChainId] = useState(supportedChains[0].id.toString());
+  const [chainId, setChainId] = useState(arcTestnet.id.toString());
   const [qrData, setQrData] = useState<string | null>(null);
 
+  const selectedChain = supportedChains.find(c => c.id.toString() === chainId);
+
   const handleGenerateQR = () => {
-    const finalAddress = useConnectedWallet ? address : recipientAddress;
-    
-    if (!finalAddress || !amount || !chainId) {
-      toast.error("Please fill in all fields");
+    if (!address || !amount || !chainId) {
+      toast.error("Please enter an amount");
       return;
     }
 
@@ -38,107 +34,137 @@ export function ReceiveFlow() {
 
     const paymentRequest = {
       type: "warpsend-payment-request",
-      address: finalAddress,
+      address: address,
       amount,
       chainId,
       timestamp: Date.now(),
     };
 
     setQrData(JSON.stringify(paymentRequest));
-    toast.success("Payment request created!");
+    toast.success("QR code generated!");
   };
 
   const handleCopyData = () => {
     if (qrData) {
       navigator.clipboard.writeText(qrData);
-      toast.success("Payment data copied to clipboard");
+      toast.success("Payment data copied");
     }
   };
 
   const handleDownloadQR = () => {
-    const canvas = document.querySelector("#payment-qr canvas") as HTMLCanvasElement;
-    if (canvas) {
-      const url = canvas.toDataURL("image/png");
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `warpsend-payment-${Date.now()}.png`;
-      a.click();
-      toast.success("QR code downloaded");
+    const svg = document.querySelector("#payment-qr svg") as SVGElement;
+    if (svg) {
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      const svgData = new XMLSerializer().serializeToString(svg);
+      const img = new Image();
+      img.onload = () => {
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx?.drawImage(img, 0, 0);
+        const url = canvas.toDataURL("image/png");
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `warpsend-${amount}-usdc.png`;
+        a.click();
+        toast.success("QR code downloaded");
+      };
+      img.src = "data:image/svg+xml;base64," + btoa(svgData);
     }
   };
 
   const handleReset = () => {
     setQrData(null);
     setAmount("");
-    if (!useConnectedWallet) {
-      setRecipientAddress("");
-    }
   };
 
   if (!isConnected) {
     return (
-      <Card>
-        <CardContent className="py-8 text-center text-muted-foreground">
-          Connect your wallet to create payment requests
-        </CardContent>
-      </Card>
+      <div className="text-center py-8">
+        <QrCode className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+        <p className="text-muted-foreground">Connect your wallet to receive USDC</p>
+      </div>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Request Payment</CardTitle>
-        <CardDescription>
-          Create a QR code that anyone can scan to pay you
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {!qrData ? (
-          <>
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="use-connected"
-                checked={useConnectedWallet}
-                onCheckedChange={(checked) => setUseConnectedWallet(checked as boolean)}
-              />
-              <Label htmlFor="use-connected" className="text-sm font-normal cursor-pointer">
-                Use connected wallet address ({address?.slice(0, 6)}...{address?.slice(-4)})
-              </Label>
+    <div>
+      {/* QR Code Display */}
+      {qrData ? (
+        <div className="space-y-5">
+          <div className="text-center">
+            <h3 className="text-lg font-semibold mb-1">Share to Receive</h3>
+            <p className="text-sm text-muted-foreground">Anyone with WarpSend can scan this to pay you</p>
+          </div>
+
+          <div className="flex justify-center">
+            <div id="payment-qr" className="bg-white p-5 rounded-2xl shadow-lg">
+              <QRCodeSVG value={qrData} size={180} level="H" />
             </div>
+          </div>
 
-            {!useConnectedWallet && (
-              <div className="space-y-2">
-                <Label>Recipient Address</Label>
-                <Input
-                  placeholder="0x..."
-                  value={recipientAddress}
-                  onChange={(e) => setRecipientAddress(e.target.value)}
-                />
-              </div>
-            )}
+          <div className="text-center space-y-1">
+            <p className="text-2xl font-bold tabular-nums">{amount} USDC</p>
+            <p className="text-sm text-muted-foreground">
+              on {selectedChain?.name}
+            </p>
+            <p className="text-xs text-muted-foreground font-mono">
+              {address?.slice(0, 10)}...{address?.slice(-8)}
+            </p>
+          </div>
 
+          <div className="flex gap-3">
+            <Button onClick={handleCopyData} variant="outline" className="flex-1 rounded-xl h-11">
+              <Copy className="w-4 h-4 mr-2" />
+              Copy
+            </Button>
+            <Button onClick={handleDownloadQR} variant="outline" className="flex-1 rounded-xl h-11">
+              <Download className="w-4 h-4 mr-2" />
+              Save
+            </Button>
+          </div>
+
+          <Button onClick={handleReset} variant="ghost" className="w-full rounded-xl">
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Create New Request
+          </Button>
+        </div>
+      ) : (
+        /* Form to Generate QR */
+        <div className="space-y-5">
+          <div className="text-center">
+            <div className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center mb-3">
+              <QrCode className="w-8 h-8 text-primary" />
+            </div>
+            <h3 className="text-lg font-semibold mb-2">Request Payment</h3>
+            <p className="text-muted-foreground text-sm">
+              Generate a QR code that anyone can scan to pay you
+            </p>
+          </div>
+
+          <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Amount (USDC)</Label>
+              <Label className="text-sm font-medium">Amount (USDC)</Label>
               <Input
                 type="number"
                 placeholder="0.00"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
+                className="rounded-xl h-12 bg-secondary/30 border-border/50 focus:border-primary/50 text-lg font-mono text-center"
               />
             </div>
 
             <div className="space-y-2">
-              <Label>Receive on Chain</Label>
+              <Label className="text-sm font-medium">Receive on</Label>
               <Select value={chainId} onValueChange={setChainId}>
-                <SelectTrigger>
+                <SelectTrigger className="rounded-xl h-11 bg-secondary/30 border-border/50">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
-                  {supportedChains.map((chain) => {
+                <SelectContent className="rounded-xl">
+                  {supportedChains.filter(chain => isGatewaySupported(chain.id)).map((chain) => {
                     const info = getChainInfo(chain.id);
                     return (
-                      <SelectItem key={chain.id} value={chain.id.toString()}>
+                      <SelectItem key={chain.id} value={chain.id.toString()} className="rounded-lg">
                         {chain.name}
                         {info?.attestationTime && (
                           <span className="text-xs text-muted-foreground ml-2">
@@ -152,48 +178,22 @@ export function ReceiveFlow() {
               </Select>
             </div>
 
-            <Button onClick={handleGenerateQR} className="w-full">
-              <QrCode className="w-4 h-4 mr-2" />
-              Generate QR Code
-            </Button>
-          </>
-        ) : (
-          <>
-            <div className="flex flex-col items-center gap-4">
-              <div id="payment-qr" className="bg-white p-4 rounded-lg">
-                <QRCodeSVG value={qrData} size={256} level="H" />
-              </div>
-              
-              <div className="text-center space-y-1">
-                <p className="text-sm font-medium">
-                  Request: {amount} USDC
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  To: {(useConnectedWallet ? address : recipientAddress)?.slice(0, 10)}...
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Chain: {supportedChains.find(c => c.id.toString() === chainId)?.name}
-                </p>
-              </div>
-
-              <div className="flex gap-2 w-full">
-                <Button onClick={handleCopyData} variant="outline" className="flex-1">
-                  <Copy className="w-4 h-4 mr-2" />
-                  Copy Data
-                </Button>
-                <Button onClick={handleDownloadQR} variant="outline" className="flex-1">
-                  <Download className="w-4 h-4 mr-2" />
-                  Download
-                </Button>
-              </div>
-
-              <Button onClick={handleReset} variant="ghost" className="w-full">
-                Create New Request
-              </Button>
+            <div className="p-3 rounded-xl bg-secondary/30 border border-border/50">
+              <p className="text-xs text-muted-foreground mb-1">Receiving to</p>
+              <p className="text-xs font-mono truncate">{address}</p>
             </div>
-          </>
-        )}
-      </CardContent>
-    </Card>
+          </div>
+
+          <Button 
+            onClick={handleGenerateQR} 
+            disabled={!amount || parseFloat(amount) <= 0}
+            className="w-full h-12 rounded-xl text-sm font-semibold"
+          >
+            <QrCode className="w-4 h-4 mr-2" />
+            Generate QR Code
+          </Button>
+        </div>
+      )}
+    </div>
   );
 }

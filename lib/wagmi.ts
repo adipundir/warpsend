@@ -17,12 +17,12 @@ import {
 } from "viem/chains";
 
 // You should get your own project ID from https://cloud.walletconnect.com
-const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || "YOUR_PROJECT_ID";
+const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID! as string;
 
 export const config = getDefaultConfig({
   appName: "WarpSend",
   projectId,
-  chains: supportedChains,
+  chains: [arcTestnet, ...supportedChains.filter(c => c.id !== arcTestnet.id)],
   transports: {
     [arcTestnet.id]: http("https://rpc.testnet.arc.network"),
     [sepolia.id]: http(),

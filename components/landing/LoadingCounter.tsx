@@ -8,7 +8,7 @@ interface LoadingCounterProps {
 }
 
 export function LoadingCounter({
-    duration = 2500,
+    duration = 1000,
     onComplete,
 }: LoadingCounterProps) {
     const [count, setCount] = useState(0);

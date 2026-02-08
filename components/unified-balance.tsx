@@ -14,7 +14,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import {
   Select,
   SelectContent,
@@ -22,6 +21,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
 import {
   supportedChains,
@@ -30,6 +36,8 @@ import {
   GATEWAY_WALLET_ADDRESS,
   arcTestnet,
   getChainInfo,
+  CHAIN_ICON_URLS,
+  getChainIconUrl,
 } from "@/lib/chains";
 import { ERC20_ABI, formatUSDCAmount, parseUSDCAmount } from "@/lib/contracts";
 import { getGatewayBalances, GATEWAY_WALLET_ABI } from "@/lib/gateway";
@@ -54,13 +62,14 @@ export function UnifiedBalance() {
   const [depositAmount, setDepositAmount] = useState("");
   const [selectedDepositChain, setSelectedDepositChain] = useState<string>(arcTestnet.id.toString());
   const [isDepositing, setIsDepositing] = useState(false);
+  const [depositModalOpen, setDepositModalOpen] = useState(false);
 
   const currentChain = supportedChains.find((c) => c.id === chainId);
   const depositChainId = parseInt(selectedDepositChain);
   const depositChainInfo = getChainInfo(depositChainId);
   const usdcAddress = USDC_ADDRESSES[depositChainId];
 
-  // Read wallet USDC balance for selected deposit chain
+  // Read wallet USDC balance for connected chain
   const { data: walletBalance, refetch: refetchWalletBalance } = useReadContract({
     address: USDC_ADDRESSES[chainId],
     abi: ERC20_ABI,
@@ -70,6 +79,7 @@ export function UnifiedBalance() {
       enabled: !!address && !!USDC_ADDRESSES[chainId],
     },
   });
+
 
   const { writeContractAsync } = useWriteContract();
 
@@ -116,6 +126,15 @@ export function UnifiedBalance() {
     if (address) {
       fetchUnifiedBalance();
     }
+  }, [address, fetchUnifiedBalance]);
+
+  // Refresh balance when a send or deposit completes (other components dispatch this event)
+  useEffect(() => {
+    const onBalanceChanged = () => {
+      if (address) fetchUnifiedBalance();
+    };
+    window.addEventListener("warpsend-balance-changed", onBalanceChanged);
+    return () => window.removeEventListener("warpsend-balance-changed", onBalanceChanged);
   }, [address, fetchUnifiedBalance]);
 
   // Handle deposit to Gateway
@@ -171,9 +190,11 @@ export function UnifiedBalance() {
       toast.info(`Waiting for attestation (${depositChainInfo.attestationTime})...`);
 
       setDepositAmount("");
+      setDepositModalOpen(false);
       refetchWalletBalance();
 
-      // Refresh balances after a delay (wait for attestation)
+      // Refresh balance now and again after attestation
+      fetchUnifiedBalance();
       setTimeout(() => {
         fetchUnifiedBalance();
       }, 5000);
@@ -186,130 +207,150 @@ export function UnifiedBalance() {
   };
 
   const formattedWalletBalance = walletBalance ? parseUSDCAmount(walletBalance) : "0";
+  // In modal, use connected chain balance when selected chain matches; otherwise 0 (switch to see balance)
+  const modalWalletBalance =
+    depositChainId === chainId ? formattedWalletBalance : "0";
+  const modalWalletBalanceNum = parseFloat(modalWalletBalance);
+
+  // Show all gateway chains (with 0 balance) before first fetch; Arc Testnet first
+  const displayChainBalances = (
+    chainBalances.length > 0
+      ? chainBalances
+      : supportedChains
+          .filter((c) => GATEWAY_DOMAINS[c.id] !== undefined)
+          .map((c) => ({
+            chainId: c.id,
+            chainName: c.name,
+            domain: GATEWAY_DOMAINS[c.id],
+            walletBalance: "0",
+            gatewayBalance: "0.000000",
+          }))
+  ).sort((a, b) => (a.chainId === arcTestnet.id ? -1 : b.chainId === arcTestnet.id ? 1 : 0));
 
   if (!isConnected) {
     return (
-      <Card className="w-full">
-        <CardContent className="py-8 text-center text-muted-foreground">
-          Connect your wallet to view your unified balance
-        </CardContent>
-      </Card>
+      <div className="text-center py-8">
+        <p className="text-muted-foreground">Connect your wallet to view your balance</p>
+      </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      {/* Unified Balance Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>Unified USDC Balance</span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={fetchUnifiedBalance}
-              disabled={isLoadingBalances}
-            >
-              {isLoadingBalances ? "Loading..." : "Refresh"}
-            </Button>
-          </CardTitle>
-          <CardDescription>
-            Your total USDC balance across all chains via Circle Gateway
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-6 bg-gradient-to-br from-primary/5 to-primary/10 rounded-lg border">
-            <p className="text-sm text-muted-foreground mb-1">Total Available</p>
-            <p className="text-5xl font-bold tracking-tight">
-              {isLoadingBalances ? "..." : unifiedBalance}
-            </p>
-            <p className="text-lg text-muted-foreground">USDC</p>
-          </div>
+      <div className="mb-4">
+        <h2 className="text-xl font-semibold mb-1">Gateway unified balance</h2>
+        <p className="text-sm text-muted-foreground">Total USDC across all chains</p>
+      </div>
+      
+      {/* Main balance display */}
+      <div className="text-center py-8 rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/10">
+        <p className="text-sm font-medium text-muted-foreground mb-2">Available to send</p>
+        <p className="text-5xl md:text-6xl font-bold tracking-tighter tabular-nums mb-2">
+          {isLoadingBalances ? "..." : unifiedBalance}
+        </p>
+        <p className="text-lg text-muted-foreground font-medium">USDC</p>
+        <Button
+          className="mt-5 rounded-xl px-6 py-5 text-sm font-semibold"
+          onClick={() => setDepositModalOpen(true)}
+        >
+          Deposit into Gateway
+        </Button>
+      </div>
 
-          {/* Per-chain breakdown */}
-          {chainBalances.length > 0 && (
-            <div className="mt-6">
-              <p className="text-sm font-medium mb-3">Balance by Chain</p>
-              <div className="space-y-2">
-                {chainBalances
-                  .filter((cb) => parseFloat(cb.gatewayBalance) > 0)
-                  .map((cb) => (
-                    <div
-                      key={cb.chainId}
-                      className="flex items-center justify-between p-3 bg-secondary/30 rounded-lg"
-                    >
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="text-xs">
-                          {cb.chainName}
-                        </Badge>
-                      </div>
-                      <span className="font-mono font-medium">
-                        {cb.gatewayBalance} USDC
+      {/* Per-chain balance cards */}
+      {displayChainBalances.length > 0 && (
+        <div>
+          <h3 className="text-sm font-medium text-muted-foreground mb-3">Balance by chain</h3>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+            {displayChainBalances.map((cb) => {
+              const iconUrl = CHAIN_ICON_URLS[cb.chainId] ?? getChainIconUrl(cb.chainId);
+              return (
+                <div 
+                  key={cb.chainId} 
+                  className="glass-card rounded-2xl p-5 flex flex-col items-center text-center gap-3 transition-all hover:scale-[1.02]"
+                >
+                  <div className="w-12 h-12 rounded-xl bg-secondary/80 flex items-center justify-center overflow-hidden shrink-0">
+                    {iconUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={iconUrl}
+                        alt=""
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-base font-semibold text-muted-foreground">
+                        {cb.chainName.charAt(0)}
                       </span>
-                    </div>
-                  ))}
-                {chainBalances.every((cb) => parseFloat(cb.gatewayBalance) === 0) && (
-                  <p className="text-sm text-muted-foreground text-center py-4">
-                    No deposits yet. Deposit USDC to start building your unified balance.
+                    )}
+                  </div>
+                  <p className="text-sm font-medium truncate w-full">{cb.chainName}</p>
+                  <p className="text-base font-mono font-semibold tabular-nums">
+                    {isLoadingBalances ? "…" : cb.gatewayBalance}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Deposit to Gateway modal */}
+      <Dialog open={depositModalOpen} onOpenChange={setDepositModalOpen}>
+        <DialogContent className="sm:max-w-md rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-xl">Deposit to Gateway</DialogTitle>
+            <DialogDescription>
+              Add USDC to your unified balance from any supported chain
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-5 pt-2">
+            {/* Wallet balance for selected chain */}
+            <div className="flex items-center justify-between p-5 rounded-xl bg-secondary/30 border border-border/50">
+              <div>
+                <p className="text-sm text-muted-foreground">Wallet balance</p>
+                <p className="text-2xl font-bold tabular-nums">
+                  {modalWalletBalance} USDC
+                </p>
+                {depositChainId !== chainId && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Switch to {depositChainInfo.chain?.name} to see balance
                   </p>
                 )}
               </div>
+              <Badge variant="secondary" className="rounded-lg px-3 py-1">{depositChainInfo.chain?.name ?? "—"}</Badge>
             </div>
-          )}
-        </CardContent>
-      </Card>
 
-      {/* Deposit Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Deposit to Gateway</CardTitle>
-          <CardDescription>
-            Add USDC to your unified balance from any supported chain
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Current wallet balance */}
-          <div className="flex items-center justify-between p-4 bg-secondary/50 rounded-lg">
-            <div>
-              <p className="text-sm text-muted-foreground">Wallet Balance</p>
-              <p className="text-xl font-bold">{formattedWalletBalance} USDC</p>
+            {/* Chain selection */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Select source chain</Label>
+              <Select
+                value={selectedDepositChain}
+                onValueChange={setSelectedDepositChain}
+                disabled={isDepositing}
+              >
+                <SelectTrigger className="rounded-xl h-12 bg-secondary/30 border-border/50">
+                  <SelectValue placeholder="Select chain" />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl">
+                  {supportedChains.map((chain) => (
+                    <SelectItem key={chain.id} value={chain.id.toString()} className="rounded-lg">
+                      {chain.name}
+                      {chain.id === chainId && " (Current)"}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Attestation time: {depositChainInfo.attestationTime}
+              </p>
             </div>
-            <Badge variant="outline">{currentChain?.name || "Unknown"}</Badge>
-          </div>
 
-          <Separator />
-
-          {/* Chain Selection */}
-          <div className="space-y-2">
-            <Label>Deposit From Chain</Label>
-            <Select
-              value={selectedDepositChain}
-              onValueChange={setSelectedDepositChain}
-              disabled={isDepositing}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select chain" />
-              </SelectTrigger>
-              <SelectContent>
-                {supportedChains.map((chain) => (
-                  <SelectItem key={chain.id} value={chain.id.toString()}>
-                    {chain.name}
-                    {chain.id === chainId && " (Current)"}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground">
-              Attestation time: {depositChainInfo.attestationTime}
-            </p>
-          </div>
-
-          {/* Amount Input */}
-          <div className="space-y-2">
-            <Label htmlFor="deposit-amount">Amount (USDC)</Label>
-            <div className="flex gap-2">
+            {/* Amount with 25% 50% Max */}
+            <div className="space-y-2">
+              <Label htmlFor="deposit-amount-modal" className="text-sm font-medium">Amount (USDC)</Label>
               <Input
-                id="deposit-amount"
+                id="deposit-amount-modal"
                 type="number"
                 placeholder="0.00"
                 value={depositAmount}
@@ -317,49 +358,75 @@ export function UnifiedBalance() {
                 disabled={isDepositing}
                 min="0"
                 step="0.01"
+                className="rounded-xl h-12 bg-secondary/30 border-border/50 focus:border-primary/50 text-lg font-mono"
               />
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setDepositAmount(formattedWalletBalance)}
-                disabled={isDepositing}
-              >
-                Max
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 rounded-lg"
+                  onClick={() =>
+                    setDepositAmount(
+                      (modalWalletBalanceNum * 0.25).toFixed(6)
+                    )
+                  }
+                  disabled={isDepositing || modalWalletBalanceNum <= 0}
+                >
+                  25%
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 rounded-lg"
+                  onClick={() =>
+                    setDepositAmount(
+                      (modalWalletBalanceNum * 0.5).toFixed(6)
+                    )
+                  }
+                  disabled={isDepositing || modalWalletBalanceNum <= 0}
+                >
+                  50%
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 rounded-lg"
+                  onClick={() => setDepositAmount(modalWalletBalance)}
+                  disabled={isDepositing || modalWalletBalanceNum <= 0}
+                >
+                  Max
+                </Button>
+              </div>
             </div>
-          </div>
 
-          {/* Deposit Button */}
-          <Button
-            className="w-full"
-            size="lg"
-            onClick={handleDeposit}
-            disabled={isDepositing || !depositAmount || parseFloat(depositAmount) <= 0}
-          >
-            {isDepositing ? "Depositing..." : "Deposit to Gateway"}
-          </Button>
-
-          {/* Switch chain hint */}
-          {chainId !== depositChainId && (
-            <p className="text-xs text-center text-muted-foreground">
-              You&apos;ll be prompted to switch to {depositChainInfo.chain?.name}
-            </p>
-          )}
-
-          {/* Faucet Link */}
-          <p className="text-xs text-center text-muted-foreground">
-            Need testnet USDC?{" "}
-            <a
-              href="https://faucet.circle.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline hover:text-foreground"
+            <Button
+              className="w-full h-14 rounded-xl text-base font-semibold"
+              onClick={handleDeposit}
+              disabled={isDepositing || !depositAmount || parseFloat(depositAmount) <= 0}
             >
-              Get it from Circle Faucet
-            </a>
-          </p>
-        </CardContent>
-      </Card>
+              {isDepositing ? "Depositing..." : "Deposit to Gateway"}
+            </Button>
+
+            {chainId !== depositChainId && (
+              <p className="text-xs text-center text-muted-foreground">
+                You&apos;ll be prompted to switch to {depositChainInfo.chain?.name}
+              </p>
+            )}
+
+            <p className="text-xs text-center text-muted-foreground">
+              Need testnet USDC?{" "}
+              <a
+                href="https://faucet.circle.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline hover:text-foreground transition-colors"
+              >
+                Circle Faucet
+              </a>
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

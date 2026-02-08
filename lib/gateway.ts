@@ -4,6 +4,7 @@ import {
   GATEWAY_MINTER_ADDRESS,
   GATEWAY_DOMAINS,
   getChainInfo,
+  getGasFee,
 } from "./chains";
 import { formatUSDCAmount } from "./contracts";
 
@@ -74,6 +75,19 @@ export function addressToBytes32(address: string): Hex {
   return pad(address.toLowerCase() as Hex, { size: 32 });
 }
 
+// Calculate the recommended maxFee for a Gateway transfer
+// Based on Circle's fee structure: https://developers.circle.com/gateway/references/fees
+// Formula: maxFee ≥ gas fee + (amount × 0.00005)
+// - Transfer fee: 0.005% (0.5 basis points) on crosschain transfers
+// - Gas fee: varies by source chain ($0.001 to $2.00)
+export function calculateMaxFee(amountInSmallestUnits: bigint, sourceChainId?: number): bigint {
+  const transferFee = amountInSmallestUnits / 20000n; // 0.005% = 1/20000
+  const gasFee = sourceChainId ? getGasFee(sourceChainId) : 100000n; // Use chain-specific or $0.10 default
+  // Add 20% buffer for gas fluctuations
+  const gasWithBuffer = (gasFee * 120n) / 100n;
+  return transferFee + gasWithBuffer;
+}
+
 // Generate random salt for burn intent
 function generateSalt(): Hex {
   const randomBytes = new Uint8Array(32);
@@ -100,7 +114,7 @@ export function createBurnIntent(params: CreateBurnIntentParams) {
     depositorAddress,
     recipientAddress,
     amount,
-    maxFee = 2_010000n, // Default max fee ~$2
+    maxFee,
   } = params;
 
   const sourceInfo = getChainInfo(sourceChainId);
@@ -111,10 +125,13 @@ export function createBurnIntent(params: CreateBurnIntentParams) {
   }
 
   const amountBigInt = formatUSDCAmount(amount);
+  
+  // Calculate maxFee if not provided using Circle's fee formula (chain-specific gas + 0.005% transfer fee)
+  const calculatedMaxFee = maxFee ?? calculateMaxFee(amountBigInt, sourceChainId);
 
   return {
     maxBlockHeight: maxUint256,
-    maxFee,
+    maxFee: calculatedMaxFee,
     spec: {
       version: 1,
       sourceDomain: sourceInfo.domain,

@@ -50,9 +50,9 @@ export function Globe({
             diffuse: 1.2,
             mapSamples: 16000,
             mapBrightness: 6,
-            baseColor: [0.25, 0.25, 0.28], // Dark gray base
-            markerColor: [0.6, 0.6, 0.65], // Light gray markers
-            glowColor: [0.15, 0.15, 0.18], // Dark glow
+            baseColor: [0.2, 0.25, 0.35], // Deep blue-gray base
+            markerColor: [0.4, 0.65, 0.75], // Cyan markers
+            glowColor: [0.15, 0.2, 0.3], // Subtle blue glow
             markers: showArcs
                 ? [
                     { location: [37.7749, -122.4194], size: 0.08 }, // San Francisco

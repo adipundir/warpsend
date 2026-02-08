@@ -25,18 +25,18 @@ export function AnimatedLanding({ onComplete }: AnimatedLandingProps) {
         // After globe appears, show arcs
         setTimeout(() => {
             setPhase("globe-arcs");
-        }, 1500);
+        }, 300);
 
         // Then reveal the logo
         setTimeout(() => {
             setPhase("logo-reveal");
-        }, 3500);
+        }, 900);
 
         // Finally complete
         setTimeout(() => {
             setPhase("complete");
             onComplete?.();
-        }, 4500);
+        }, 1300);
     }, [onComplete]);
 
     return (
@@ -46,18 +46,18 @@ export function AnimatedLanding({ onComplete }: AnimatedLandingProps) {
         >
             {/* Loading Phase */}
             <div
-                className="absolute inset-0 flex items-center justify-center transition-opacity duration-500"
+                className="absolute inset-0 flex items-center justify-center transition-opacity duration-300"
                 style={{
                     opacity: phase === "loading" ? 1 : 0,
                     pointerEvents: phase === "loading" ? "auto" : "none",
                 }}
             >
-                <LoadingCounter duration={2500} onComplete={handleLoadingComplete} />
+                <LoadingCounter duration={1000} onComplete={handleLoadingComplete} />
             </div>
 
             {/* Globe Phase */}
             <div
-                className="absolute inset-0 flex items-center justify-center transition-all duration-700"
+                className="absolute inset-0 flex items-center justify-center transition-all duration-400"
                 style={{
                     opacity:
                         phase === "globe-entry" || phase === "globe-arcs" ? 1 : 0,
@@ -79,7 +79,7 @@ export function AnimatedLanding({ onComplete }: AnimatedLandingProps) {
 
             {/* Logo Reveal Phase */}
             <div
-                className="absolute inset-0 flex items-center justify-center transition-all duration-1000"
+                className="absolute inset-0 flex items-center justify-center transition-all duration-400"
                 style={{
                     opacity: phase === "logo-reveal" || phase === "complete" ? 1 : 0,
                     transform:

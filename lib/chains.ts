@@ -6,11 +6,12 @@ import {
 } from "viem/chains";
 
 // Arc Testnet custom chain definition
+// MetaMask requires nativeCurrency.decimals to be 18 for wallet_addEthereumChain
 export const arcTestnet = defineChain({
   id: 5042002,
   name: "Arc Testnet",
   nativeCurrency: {
-    decimals: 6,
+    decimals: 18,
     name: "USDC",
     symbol: "USDC",
   },
@@ -161,6 +162,24 @@ export const ATTESTATION_TIMES: Record<number, string> = {
   [worldchainSepolia.id]: "~13-19 minutes",
 };
 
+// Gas fees per chain (in USDC with 6 decimals) - from Circle docs
+// https://developers.circle.com/gateway/references/fees
+export const GAS_FEES: Record<number, bigint> = {
+  [arcTestnet.id]: 10000n,           // $0.01 (estimated, not in docs)
+  [avalancheFuji.id]: 20000n,        // $0.02
+  [seiTestnet.id]: 1000n,            // $0.001
+  [sonicTestnet.id]: 10000n,         // $0.01
+  [hyperliquidEvmTestnet.id]: 50000n,// $0.05
+  [sepolia.id]: 2000000n,            // $2.00 (Ethereum is expensive)
+  [baseSepolia.id]: 10000n,          // $0.01
+  [worldchainSepolia.id]: 10000n,    // $0.01
+};
+
+// Get gas fee for a chain (with small buffer)
+export function getGasFee(chainId: number): bigint {
+  return GAS_FEES[chainId] ?? 100000n; // Default $0.10 if unknown
+}
+
 // Helper to get chain info
 export function getChainInfo(chainId: number) {
   const chain = supportedChains.find((c) => c.id === chainId);
@@ -184,3 +203,18 @@ export function isCrossChainTransfer(
 export function isGatewaySupported(chainId: number): boolean {
   return GATEWAY_DOMAINS[chainId] !== undefined;
 }
+
+// Chain icon URLs (WalletConnect explorer uses eip155:chainId; custom for Arc)
+export function getChainIconUrl(chainId: number): string {
+  return `https://explorer-api.walletconnect.com/v3/logo?chainId=eip155:${chainId}`;
+}
+export const CHAIN_ICON_URLS: Record<number, string> = {
+  [arcTestnet.id]: "https://testnet.arcscan.app/favicon.ico",
+  [sepolia.id]: getChainIconUrl(sepolia.id),
+  [baseSepolia.id]: getChainIconUrl(baseSepolia.id),
+  [avalancheFuji.id]: getChainIconUrl(avalancheFuji.id),
+  [sonicTestnet.id]: getChainIconUrl(sonicTestnet.id),
+  [worldchainSepolia.id]: getChainIconUrl(worldchainSepolia.id),
+  [hyperliquidEvmTestnet.id]: getChainIconUrl(hyperliquidEvmTestnet.id),
+  [seiTestnet.id]: getChainIconUrl(seiTestnet.id),
+};

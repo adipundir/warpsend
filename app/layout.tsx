@@ -1,23 +1,25 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import { Header } from "@/components/header";
 import { Toaster } from "@/components/ui/sonner";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
+  variable: "--font-sans",
   subsets: ["latin"],
+  display: "swap",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-mono",
   subsets: ["latin"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
   title: "WarpSend - Cross-Chain USDC Payments",
-  description: "Send USDC to any wallet or ENS name across chains with Circle CCTP",
+  description: "Send USDC to any wallet or ENS name across chains with Circle Gateway",
 };
 
 export default function RootLayout({
@@ -28,14 +30,14 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen`}
+        className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased min-h-screen`}
       >
         <Providers>
           <Header />
-          <main className="container mx-auto px-4 py-8 md:px-8">
+          <main>
             {children}
           </main>
-          <Toaster position="top-right" />
+          <Toaster position="top-right" richColors />
         </Providers>
       </body>
     </html>

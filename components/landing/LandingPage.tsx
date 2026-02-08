@@ -74,7 +74,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
                         }}
                     >
                         <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                        <span className="text-muted-foreground">Powered by <span className="text-foreground font-medium">Circle Gateway</span> & <span className="text-foreground font-medium">Arc</span></span>
+                        <span className="text-muted-foreground">Powered by <span className="text-foreground font-medium">Circle Gateway</span></span>
                     </div>
 
                     {/* Main Heading */}
@@ -105,9 +105,9 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
                         Send to anyone, anywhere, instantly.
                     </p>
 
-                    {/* CTA Buttons */}
+                    {/* CTA Button */}
                     <div
-                        className="flex flex-col sm:flex-row items-center justify-center gap-4 transition-all duration-700 delay-300"
+                        className="flex items-center justify-center transition-all duration-700 delay-300"
                         style={{
                             opacity: isVisible ? 1 : 0,
                             transform: isVisible ? 'translateY(0)' : 'translateY(20px)'
@@ -117,17 +117,9 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
                             onClick={onGetStarted}
                             className="group flex items-center gap-2 px-8 py-4 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-2xl transition-all hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.02]"
                         >
-                            Start Sending
+                            Launch App
                             <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                         </button>
-                        <a
-                            href="https://faucet.circle.com"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-2 px-8 py-4 glass hover:bg-secondary/80 font-medium rounded-2xl transition-all"
-                        >
-                            Get Testnet USDC
-                        </a>
                     </div>
 
                     {/* Stats */}
@@ -143,7 +135,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
                         </div>
                         <div className="text-center">
                             <div className="text-3xl md:text-4xl font-bold tabular-nums">0.5s</div>
-                            <div className="text-sm text-muted-foreground mt-1">Arc Speed</div>
+                            <div className="text-sm text-muted-foreground mt-1">Speed</div>
                         </div>
                         <div className="text-center">
                             <div className="text-3xl md:text-4xl font-bold tabular-nums">1</div>
@@ -194,7 +186,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
                             <div className="text-sm font-medium text-primary mb-2">Step 2</div>
                             <h3 className="text-xl font-semibold mb-3">Send</h3>
                             <p className="text-muted-foreground leading-relaxed">
-                                Pick any destination chain. Arc makes it instant.
+                                Pick any destination chain. Instant delivery.
                             </p>
                         </div>
 
@@ -245,7 +237,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
                         </span>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                        Built with Circle Gateway & Arc Network
+                        Powered by Circle Gateway
                     </p>
                 </div>
             </footer>

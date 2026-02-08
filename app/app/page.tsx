@@ -32,12 +32,12 @@ export default function AppPage() {
               <p className="text-muted-foreground">Loading…</p>
             </div>
           ) : showConnectPrompt ? (
-            <div className="w-full max-w-md mx-auto rounded-2xl border border-border/60 bg-card/80 dark:bg-card/60 shadow-lg shadow-black/5 p-10 md:p-14 flex flex-col items-center text-center">
-              <h2 className="text-xl font-bold text-foreground mb-2 tracking-tight">Connect your wallet</h2>
-              <p className="text-sm text-muted-foreground mb-8 max-w-[280px] leading-relaxed">
+            <div className="w-full max-w-md mx-auto flex flex-col items-center text-center">
+              <h2 className="text-2xl font-bold text-foreground mb-2 tracking-tight">Connect your wallet</h2>
+              <p className="text-sm text-muted-foreground mb-8 max-w-[300px] leading-relaxed">
                 View your balance, deposit from any chain, and send or receive USDC.
               </p>
-              <div className="w-full flex justify-center [&_button]:!rounded-xl [&_button]:!h-12 [&_button]:!px-6 [&_button]:!text-base [&_button]:!font-semibold">
+              <div className="flex justify-center [&_button]:!rounded-xl [&_button]:!h-12 [&_button]:!px-8 [&_button]:!text-base [&_button]:!font-semibold [&_button]:!shadow-md">
                 <ConnectButton
                   showBalance={false}
                   chainStatus="icon"
@@ -99,6 +99,7 @@ export default function AppPage() {
             </Modal>
           </>
         )}
+        </div>
       </div>
     </div>
   );

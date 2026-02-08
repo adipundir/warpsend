@@ -20,9 +20,9 @@ export function AnimatedLanding({ onComplete }: AnimatedLandingProps) {
 
     const handleLoadingComplete = useCallback(() => {
         setPhase("globe-entry");
-        setTimeout(() => setPhase("globe-arcs"), 400);
+        setTimeout(() => setPhase("globe-arcs"), 200);
         // After globe is visible, fade out and transition to main landing (hero section)
-        setTimeout(() => setIsExiting(true), 2200);
+        setTimeout(() => setIsExiting(true), 1000);
     }, []);
 
     const handleExitTransitionEnd = useCallback((e: React.TransitionEvent) => {
@@ -37,7 +37,7 @@ export function AnimatedLanding({ onComplete }: AnimatedLandingProps) {
             style={{
                 zIndex: 50,
                 opacity: isExiting ? 0 : 1,
-                transition: "opacity 0.7s cubic-bezier(0.4, 0, 0.2, 1)",
+                transition: "opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1)",
             }}
             onTransitionEnd={handleExitTransitionEnd}
         >
@@ -47,10 +47,10 @@ export function AnimatedLanding({ onComplete }: AnimatedLandingProps) {
                 style={{
                     opacity: phase === "loading" ? 1 : 0,
                     pointerEvents: phase === "loading" ? "auto" : "none",
-                    transition: "opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1)",
+                    transition: "opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                 }}
             >
-                <LoadingCounter duration={1000} onComplete={handleLoadingComplete} />
+                <LoadingCounter duration={700} onComplete={handleLoadingComplete} />
             </div>
 
             {/* Globe Phase — after loading, show globe then transition to main landing */}
@@ -60,7 +60,7 @@ export function AnimatedLanding({ onComplete }: AnimatedLandingProps) {
                     opacity: phase === "globe-entry" || phase === "globe-arcs" ? 1 : 0,
                     transform: phase === "globe-entry" || phase === "globe-arcs" ? "scale(1)" : "scale(0.95)",
                     pointerEvents: phase === "globe-entry" || phase === "globe-arcs" ? "auto" : "none",
-                    transition: "opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)",
+                    transition: "opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                 }}
             >
                 <Globe

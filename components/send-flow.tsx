@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { type Address, type Hex, isAddress } from "viem";
-import { supportedChains, GATEWAY_MINTER_ADDRESS, getChainInfo, isGatewaySupported, arcTestnet, CHAIN_ICON_URLS, getChainIconUrl } from "@/lib/chains";
+import { supportedChains, GATEWAY_MINTER_ADDRESS, getChainInfo, isGatewaySupported, getChainIdByDomain, arcTestnet, CHAIN_ICON_URLS, getChainIconUrl } from "@/lib/chains";
 import { resolveEnsToAddress, looksLikeEnsName } from "@/lib/ens";
 import { GATEWAY_MINTER_ABI, createBurnIntent, createBurnIntentTypedData, requestGatewayTransfer, getGatewayBalances } from "@/lib/gateway";
 import { ScanLine, Send, CheckCircle2, Check, ExternalLink } from "lucide-react";
@@ -176,29 +176,41 @@ export function SendFlow({ onClose }: { onClose?: () => void }) {
       return;
     }
 
-    // Check Gateway unified balance
+    // Check Gateway unified balance (required: you must deposit into Gateway first)
     const transferFee = amountValue * 0.00005;
     const estimatedGas = connectedChainId === 11155111 ? 2.00 : 0.05;
     const estimatedFee = transferFee + estimatedGas;
+    const required = amountValue + estimatedFee;
+    let totalAvailable = 0;
+    let sourceChainIdForBurn = connectedChainId!;
     try {
       const balanceRes = await getGatewayBalances(address);
-      const totalAvailable = balanceRes.balances.reduce((sum, b) => sum + parseFloat(b.balance), 0);
-      const required = amountValue + estimatedFee;
+      totalAvailable = balanceRes.balances.reduce((sum, b) => sum + parseFloat(b.balance), 0);
       if (totalAvailable < required) {
         toast.error(
-          `Insufficient balance. You have ${totalAvailable.toFixed(2)} USDC, need ~${required.toFixed(2)} USDC.`
+          totalAvailable === 0
+            ? "Gateway balance is 0. Deposit USDC into the Gateway first (use “Deposit into Gateway”), then try sending again."
+            : `Insufficient Gateway balance. You have ${totalAvailable.toFixed(2)} USDC available, need ~${required.toFixed(2)} USDC.`
         );
         return;
       }
+      // Gateway debits balance per source domain. Pick a domain where we have enough.
+      const balanceWithEnough = balanceRes.balances.find((b) => parseFloat(b.balance) >= required);
+      if (balanceWithEnough) {
+        const chainId = getChainIdByDomain(balanceWithEnough.domain);
+        if (chainId != null) sourceChainIdForBurn = chainId;
+      }
     } catch (e) {
-      console.warn("Could not validate balance", e);
+      console.warn("Could not validate Gateway balance", e);
+      toast.error("Could not load Gateway balance. Deposit into the Gateway first, then try again.");
+      return;
     }
 
     try {
       setTxStep("signing");
 
       const burnIntent = createBurnIntent({
-        sourceChainId: connectedChainId!,
+        sourceChainId: sourceChainIdForBurn,
         destinationChainId,
         depositorAddress: address,
         recipientAddress: recipientAddress as Address,
@@ -259,7 +271,9 @@ export function SendFlow({ onClose }: { onClose?: () => void }) {
     } catch (error: any) {
       console.error("Send error:", error);
       const msg = error?.message ?? "";
-      if (msg.includes("Insufficient balance")) {
+      if (msg.includes("Insufficient balance for depositor") || msg.includes("available 0")) {
+        toast.error("Gateway balance is 0. Deposit USDC into the Gateway first (use “Deposit into Gateway”), then try sending again.");
+      } else if (msg.includes("Insufficient balance")) {
         toast.error("Insufficient Gateway balance for this transfer.");
       } else if (msg.includes("rejected") || msg.includes("denied")) {
         toast.error("Transaction rejected");

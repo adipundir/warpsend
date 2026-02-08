@@ -204,6 +204,12 @@ export function isGatewaySupported(chainId: number): boolean {
   return GATEWAY_DOMAINS[chainId] !== undefined;
 }
 
+// Get chainId for a Gateway domain (for picking source chain from balance)
+export function getChainIdByDomain(domain: number): number | undefined {
+  const entry = Object.entries(GATEWAY_DOMAINS).find(([, d]) => d === domain);
+  return entry ? Number(entry[0]) : undefined;
+}
+
 // Chain icon URLs (local assets in public/logos take precedence)
 export function getChainIconUrl(chainId: number): string {
   return `https://explorer-api.walletconnect.com/v3/logo?chainId=eip155:${chainId}`;

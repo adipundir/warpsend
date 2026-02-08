@@ -37,7 +37,7 @@ export default function Home() {
       className="fixed inset-0 z-50 overflow-y-auto bg-background scrollbar-hide"
       style={{
         opacity: landingVisible ? 1 : 0,
-        transition: "opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1)",
+        transition: "opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1)",
       }}
     >
       <style jsx global>{`

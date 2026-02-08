@@ -322,3 +322,54 @@ input[type="number"] {
     transform: translateY(-2px);
   }
 }
+
+/* Toast (Sonner) – theme-aligned colors */
+[data-sonner-toaster] [data-sonner-toast] {
+  background: var(--card) !important;
+  border: 1px solid var(--border) !important;
+  color: var(--foreground) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 0 1px rgba(0, 0, 0, 0.06) !important;
+}
+.dark [data-sonner-toaster] [data-sonner-toast] {
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4), 0 0 1px rgba(255, 255, 255, 0.06) !important;
+}
+[data-rich-colors="true"][data-sonner-toast][data-type="success"] {
+  border-left: 3px solid var(--primary) !important;
+}
+[data-rich-colors="true"][data-sonner-toast][data-type="success"] [data-icon],
+[data-rich-colors="true"][data-sonner-toast][data-type="success"] [data-title] {
+  color: var(--primary) !important;
+}
+[data-rich-colors="true"][data-sonner-toast][data-type="error"] {
+  border-left: 3px solid var(--destructive) !important;
+}
+[data-rich-colors="true"][data-sonner-toast][data-type="error"] [data-icon],
+[data-rich-colors="true"][data-sonner-toast][data-type="error"] [data-title] {
+  color: var(--destructive) !important;
+}
+[data-rich-colors="true"][data-sonner-toast][data-type="warning"] {
+  border-left: 3px solid oklch(0.75 0.15 75) !important;
+}
+[data-rich-colors="true"][data-sonner-toast][data-type="warning"] [data-icon],
+[data-rich-colors="true"][data-sonner-toast][data-type="warning"] [data-title] {
+  color: oklch(0.75 0.15 75) !important;
+}
+[data-rich-colors="true"][data-sonner-toast][data-type="info"] {
+  border-left: 3px solid var(--primary) !important;
+}
+[data-rich-colors="true"][data-sonner-toast][data-type="info"] [data-icon],
+[data-rich-colors="true"][data-sonner-toast][data-type="info"] [data-title] {
+  color: var(--primary) !important;
+}
+[data-sonner-toaster] [data-sonner-toast] [data-description] {
+  color: var(--muted-foreground) !important;
+}
+[data-sonner-toaster] [data-sonner-toast] [data-close-button] {
+  background: transparent !important;
+  color: var(--muted-foreground) !important;
+  border: none !important;
+}
+[data-sonner-toaster] [data-sonner-toast] [data-close-button]:hover {
+  color: var(--foreground) !important;
+  background: var(--muted) !important;
+}

@@ -35,7 +35,7 @@ export default function RootLayout({
       >
         <Providers>
           <Header />
-          <main className="min-h-0">
+          <main>
             {children}
           </main>
           <Toaster position="bottom-right" richColors />

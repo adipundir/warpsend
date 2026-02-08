@@ -31,11 +31,11 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${plusJakarta.variable} ${jetbrainsMono.variable} font-sans antialiased h-full flex flex-col overflow-hidden`}
+        className={`${plusJakarta.variable} ${jetbrainsMono.variable} font-sans antialiased min-h-screen`}
       >
         <Providers>
           <Header />
-          <main className="flex-1 min-h-0 overflow-hidden">
+          <main className="min-h-0">
             {children}
           </main>
           <Toaster position="bottom-right" richColors />

@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { Globe } from "./Globe";
-import { ArrowRight, Zap, Wallet, Link2, Sparkles } from "lucide-react";
+import { ArrowRight, Zap, Wallet, Link2 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { Logo } from "@/components/ui/logo";
 
 interface LandingPageProps {
     onGetStarted?: () => void;
@@ -27,8 +28,8 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
                 <div className="max-w-6xl mx-auto px-6 py-4">
                     <div className="glass rounded-2xl px-6 py-3 flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                                <Sparkles className="w-4 h-4 text-primary-foreground" />
+                            <div className="w-10 h-10 flex items-center justify-center">
+                                <Logo className="w-full h-full" />
                             </div>
                             <span className="text-lg font-semibold tracking-tight">
                                 WarpSend
@@ -67,7 +68,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
                     {/* Badge */}
                     <div
                         className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass text-sm mb-8 transition-all duration-700"
-                        style={{ 
+                        style={{
                             opacity: isVisible ? 1 : 0,
                             transform: isVisible ? 'translateY(0)' : 'translateY(10px)'
                         }}
@@ -94,20 +95,20 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
                     {/* Subheading */}
                     <p
                         className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed transition-all duration-700 delay-200"
-                        style={{ 
+                        style={{
                             opacity: isVisible ? 1 : 0,
                             transform: isVisible ? 'translateY(0)' : 'translateY(20px)'
                         }}
                     >
-                        Your USDC on Ethereum, Base, Avalanche, and more? 
-                        We combine it all into <span className="text-foreground font-medium">one unified balance</span>. 
+                        Your USDC on Ethereum, Base, Avalanche, and more?
+                        We combine it all into <span className="text-foreground font-medium">one unified balance</span>.
                         Send to anyone, anywhere, instantly.
                     </p>
 
                     {/* CTA Buttons */}
                     <div
                         className="flex flex-col sm:flex-row items-center justify-center gap-4 transition-all duration-700 delay-300"
-                        style={{ 
+                        style={{
                             opacity: isVisible ? 1 : 0,
                             transform: isVisible ? 'translateY(0)' : 'translateY(20px)'
                         }}
@@ -130,9 +131,9 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
                     </div>
 
                     {/* Stats */}
-                    <div 
+                    <div
                         className="flex flex-wrap items-center justify-center gap-8 md:gap-16 mt-16 pt-8 border-t border-border/50 transition-all duration-700 delay-500"
-                        style={{ 
+                        style={{
                             opacity: isVisible ? 1 : 0,
                         }}
                     >
@@ -173,7 +174,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
                             Three simple steps to unified cross-chain payments
                         </p>
                     </div>
-                    
+
                     <div className="grid md:grid-cols-3 gap-8">
                         <div className="glass-card rounded-2xl p-8 text-center transition-all hover:scale-[1.02]">
                             <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center mx-auto mb-6">
@@ -236,8 +237,8 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
             <footer className="py-8 px-6 border-t border-border/50">
                 <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
-                        <div className="w-6 h-6 rounded-md bg-primary flex items-center justify-center">
-                            <Sparkles className="w-3 h-3 text-primary-foreground" />
+                        <div className="w-8 h-8 flex items-center justify-center">
+                            <Logo className="w-full h-full" />
                         </div>
                         <span className="text-sm text-muted-foreground">
                             © 2026 WarpSend

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Sparkles } from "lucide-react";
+import { Logo } from "@/components/ui/logo";
 
 export function Header() {
   const pathname = usePathname();
@@ -19,8 +20,8 @@ export function Header() {
       <div className="mx-auto max-w-6xl px-4 py-4 md:px-6">
         <div className="glass rounded-2xl px-4 md:px-6 py-3 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center transition-transform group-hover:scale-105">
-              <Sparkles className="w-4 h-4 text-primary-foreground" />
+            <div className="w-10 h-10 flex items-center justify-center transition-transform group-hover:scale-105">
+              <Logo className="w-full h-full" />
             </div>
             <span className="text-lg font-semibold tracking-tight">WarpSend</span>
           </Link>

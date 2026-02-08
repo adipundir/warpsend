@@ -44,7 +44,7 @@ export function LoadingCounter({
                 className="absolute left-12 bottom-12 text-primary text-sm tracking-widest font-mono"
                 style={{
                     opacity: isComplete ? 0 : 1,
-                    transition: "opacity 0.3s ease-out",
+                    transition: "opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1)",
                 }}
             >
                 LOADING...
@@ -58,7 +58,7 @@ export function LoadingCounter({
                     fontStyle: "italic",
                     fontFamily: "system-ui, -apple-system, sans-serif",
                     opacity: isComplete ? 0 : 1,
-                    transition: "opacity 0.3s ease-out",
+                    transition: "opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1)",
                 }}
             >
                 {count.toString().padStart(3, "0")}

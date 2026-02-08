@@ -14,7 +14,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
     const [isVisible, setIsVisible] = useState(false);
 
     useEffect(() => {
-        const timer = setTimeout(() => setIsVisible(true), 100);
+        const timer = setTimeout(() => setIsVisible(true), 150);
         return () => clearTimeout(timer);
     }, []);
 
@@ -22,7 +22,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
         <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
             {/* Navbar */}
             <nav
-                className="fixed top-0 left-0 right-0 z-50 transition-all duration-500"
+                className="fixed top-0 left-0 right-0 z-50 transition-all duration-500 ease-out"
                 style={{ opacity: isVisible ? 1 : 0 }}
             >
                 <div className="max-w-6xl mx-auto px-6 py-4">
@@ -53,7 +53,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
             <header className="relative min-h-screen flex items-center justify-center overflow-hidden">
                 {/* Background Globe */}
                 <div
-                    className="absolute inset-0 flex items-center justify-center pointer-events-none transition-opacity duration-1000"
+                    className="absolute inset-0 flex items-center justify-center pointer-events-none transition-opacity duration-1000 ease-out"
                     style={{ opacity: isVisible ? 0.4 : 0 }}
                 >
                     <Globe size={600} showArcs={true} autoRotate={true} />
@@ -67,7 +67,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
                 <div className="relative z-10 text-center px-6 max-w-5xl mx-auto pt-24">
                     {/* Badge */}
                     <div
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass text-sm mb-8 transition-all duration-700"
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass text-sm mb-8 transition-all duration-700 ease-out"
                         style={{
                             opacity: isVisible ? 1 : 0,
                             transform: isVisible ? 'translateY(0)' : 'translateY(10px)'
@@ -79,7 +79,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
 
                     {/* Main Heading */}
                     <h1
-                        className="font-bold tracking-tighter mb-6 transition-all duration-700 delay-100"
+                        className="font-bold tracking-tighter mb-6 transition-all duration-700 ease-out delay-100"
                         style={{
                             fontSize: "clamp(40px, 10vw, 80px)",
                             lineHeight: 1.05,
@@ -94,7 +94,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
 
                     {/* Subheading */}
                     <p
-                        className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed transition-all duration-700 delay-200"
+                        className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed transition-all duration-700 ease-out delay-200"
                         style={{
                             opacity: isVisible ? 1 : 0,
                             transform: isVisible ? 'translateY(0)' : 'translateY(20px)'
@@ -107,7 +107,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
 
                     {/* CTA Button */}
                     <div
-                        className="flex items-center justify-center transition-all duration-700 delay-300"
+                        className="flex items-center justify-center transition-all duration-700 ease-out delay-300"
                         style={{
                             opacity: isVisible ? 1 : 0,
                             transform: isVisible ? 'translateY(0)' : 'translateY(20px)'
@@ -124,7 +124,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
 
                     {/* Stats */}
                     <div
-                        className="flex flex-wrap items-center justify-center gap-8 md:gap-16 mt-16 pt-8 border-t border-border/50 transition-all duration-700 delay-500"
+                        className="flex flex-wrap items-center justify-center gap-8 md:gap-16 mt-16 pt-8 border-t border-border/50 transition-all duration-700 ease-out delay-500"
                         style={{
                             opacity: isVisible ? 1 : 0,
                         }}
@@ -146,7 +146,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
 
                 {/* Scroll indicator */}
                 <div
-                    className="absolute bottom-8 left-1/2 -translate-x-1/2 transition-all duration-700 delay-700"
+                    className="absolute bottom-8 left-1/2 -translate-x-1/2 transition-all duration-700 ease-out delay-700"
                     style={{ opacity: isVisible ? 0.6 : 0 }}
                 >
                     <div className="w-6 h-10 border-2 border-border rounded-full flex justify-center pt-2">
@@ -186,7 +186,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
                             <div className="text-sm font-medium text-primary mb-2">Step 2</div>
                             <h3 className="text-xl font-semibold mb-3">Send</h3>
                             <p className="text-muted-foreground leading-relaxed">
-                                Pick any destination chain. Instant delivery.
+                                Scan a payment QR or enter details manually. Pick any destination chain—instant delivery.
                             </p>
                         </div>
 
@@ -200,27 +200,6 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
                                 Create QR codes to request payments from anyone
                             </p>
                         </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* CTA Section */}
-            <section className="py-24 px-6">
-                <div className="max-w-3xl mx-auto text-center">
-                    <div className="glass-card rounded-3xl p-12 md:p-16">
-                        <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
-                            Ready to start?
-                        </h2>
-                        <p className="text-lg text-muted-foreground mb-8">
-                            Connect your wallet and experience seamless cross-chain USDC payments.
-                        </p>
-                        <button
-                            onClick={onGetStarted}
-                            className="group inline-flex items-center gap-2 px-8 py-4 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-2xl transition-all hover:shadow-xl hover:shadow-primary/20"
-                        >
-                            Launch App
-                            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                        </button>
                     </div>
                 </div>
             </section>

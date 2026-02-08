@@ -2,6 +2,11 @@
 
 Send USDC to any wallet or ENS name across chains with one unified balance. Powered by [Circle Gateway](https://developers.circle.com/gateway).
 
+**Key points:**
+
+- **Send and receive from any chain to any chain** — One balance, any source chain, any destination chain. No manual bridging.
+- **QR code–first** — **Receive:** Create a payment-request QR (amount + chain). The sender scans it; amount and destination chain are filled automatically—they tap confirm and send. **Send:** Scan someone’s payment QR to prefill recipient, amount, and chain, or enter details manually.
+
 ---
 
 ## The Problem
@@ -17,10 +22,10 @@ Send USDC to any wallet or ENS name across chains with one unified balance. Powe
 **WarpSend** uses **Circle Gateway** so you get:
 
 1. **One unified balance** — Deposit USDC from any supported chain into Circle’s Gateway. Your balance is aggregated; you see a single “available to send” amount.
-2. **Send to anyone, any chain** — Enter a recipient (wallet address or ENS name) and a destination chain. WarpSend burns from your Gateway balance, Circle attestation runs, and USDC is minted to the recipient on the chosen chain. You can scan a WarpSend payment-request QR or enter details manually.
-3. **Receive via QR** — Generate a payment-request QR (amount + chain). Anyone with WarpSend can scan it and pay you; funds land in your wallet on the chain you chose.
+2. **Send from any chain to any chain** — **Scan a payment QR** to send: the recipient shares a WarpSend payment-request QR (amount + destination chain). You scan it; amount, recipient, and chain are filled automatically—you confirm and send. Or enter recipient (address or ENS) and destination chain manually.
+3. **Receive via QR** — Generate a **payment-request QR** (amount + chain you want to receive on). Share it with the sender. They scan the QR in WarpSend; amount and destination chain are selected automatically. They confirm and send; funds land in your wallet on your chosen chain.
 
-No manual bridging. You deposit once (from any supported chain), then send and receive across all of them with one balance and one flow.
+**Summary:** Send and receive between any supported chains by scanning a QR code. Create a payment QR when you want to receive; the sender scans it and the amount and chain are set automatically. When sending, scan the recipient’s payment QR for one-tap prefilled payments, or enter details manually.
 
 ---
 
@@ -55,7 +60,11 @@ Integration details per chain (in code):
 - **`lib/wagmi.ts`** — Wagmi config with transports for each chain so the app can read balances and send transactions on any of them.
 - **`lib/gateway.ts`** — Burn intent construction, Gateway API calls, attestation handling, fee calculation using chain-specific gas.
 
-The app uses **ENS** (viem/ens, mainnet) to resolve names to addresses when the user enters an ENS name as recipient.
+### ENS (recipient resolution)
+
+- **Purpose:** When sending, the recipient field accepts either a **0x address** or an **ENS name** (e.g. `alice.eth`). ENS names are resolved to an Ethereum address before building the burn intent.
+- **Implementation:** `lib/ens.ts` uses **viem** on **Ethereum mainnet** for resolution only (no wallet/transaction on mainnet). Input is normalized with **UTS-46** (`normalize` from `viem/ens`), then **`getEnsAddress`** returns the resolved address. `looksLikeEnsName()` (no `0x`, contains a dot) decides when to call the resolver.
+- **Where it’s used:** Send flow (manual entry and after scanning a payment QR): if the recipient looks like an ENS name, we resolve it and use the returned address; otherwise we validate as a 0x address. Invalid or unresolved names show an error.
 
 ---
 

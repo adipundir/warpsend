@@ -1,15 +1,17 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { AnimatedLanding, LandingPage } from "@/components/landing";
 
 type PageState = "animation" | "landing";
 
 export default function Home() {
+  const router = useRouter();
   const [pageState, setPageState] = useState<PageState>("animation");
 
   const handleGetStarted = () => {
-    setPageState("landing");
+    router.push("/app");
   };
 
   if (pageState === "animation") {

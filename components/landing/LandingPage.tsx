@@ -151,34 +151,15 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
                 </div>
             </section>
 
-            {/* CTA Section */}
-            <section className="py-24 px-6 bg-muted/20">
-                <div className="max-w-3xl mx-auto text-center">
-                    <h2 className="text-3xl md:text-5xl font-bold mb-6">
-                        Ready to send?
-                    </h2>
-                    <p className="text-muted-foreground mb-10 text-lg max-w-xl mx-auto">
-                        Connect your wallet and start sending USDC across any chain.
-                    </p>
-                    <button
-                        onClick={onGetStarted}
-                        className="group inline-flex items-center gap-2 px-8 py-4 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-lg transition-all text-lg"
-                    >
-                        Launch App
-                        <ArrowRight className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" />
-                    </button>
-                </div>
-            </section>
-
             {/* Footer */}
             <footer className="py-8 px-6 border-t border-border">
                 <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
                     <div className="text-sm text-muted-foreground">
                         © 2026 WarpSend
                     </div>
-                    <div className="text-sm text-muted-foreground">
-                        Powered by Circle Gateway & Arc Network
-                    </div>
+                    <p className="text-sm text-muted-foreground">
+                        Powered by Circle Gateway &amp; Arc Network
+                    </p>
                 </div>
             </footer>
         </div>

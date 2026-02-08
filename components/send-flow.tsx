@@ -17,7 +17,7 @@ type TxStep = "idle" | "signing" | "requesting" | "switching" | "minting" | "suc
 
 export function SendFlow({ onClose }: { onClose?: () => void }) {
   const { address, isConnected } = useAccount();
-  const chainId = useChainId();
+  const connectedChainId = useChainId();
   const { switchChainAsync } = useSwitchChain();
   const { writeContractAsync } = useWriteContract();
   const { signTypedDataAsync } = useSignTypedData();
@@ -26,6 +26,8 @@ export function SendFlow({ onClose }: { onClose?: () => void }) {
   const [recipient, setRecipient] = useState("");
   const [amount, setAmount] = useState("");
   const [destChainId, setDestChainId] = useState("");
+  const effectiveDestChainId =
+    destChainId || (connectedChainId != null ? String(connectedChainId) : arcTestnet.id.toString());
   const [txStep, setTxStep] = useState<TxStep>("idle");
   const [scanning, setScanning] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
@@ -110,7 +112,6 @@ export function SendFlow({ onClose }: { onClose?: () => void }) {
   };
 
   const handleManualContinue = async () => {
-    const chainId = destChainId || arcTestnet.id.toString();
     if (!recipient.trim() || !amount) {
       toast.error("Fill in address and amount");
       return;
@@ -127,18 +128,18 @@ export function SendFlow({ onClose }: { onClose?: () => void }) {
       toast.error("Invalid address. Enter a valid 0x address or ENS name.");
       return;
     }
-    const chain = supportedChains.find((c) => c.id.toString() === chainId);
+    const chain = supportedChains.find((c) => c.id.toString() === effectiveDestChainId);
     setScannedData({
       address: resolvedAddress,
       amount,
-      chainId: chainId,
+      chainId: effectiveDestChainId,
       chainName: chain?.name || "Unknown",
     });
-    setDestChainId(chainId);
+    setDestChainId(effectiveDestChainId);
   };
 
   const handleSend = async () => {
-    if (!address || !recipient || !amount || !destChainId) {
+    if (!address || !recipient || !amount || !effectiveDestChainId) {
       toast.error("Enter payment details first");
       return;
     }
@@ -162,7 +163,7 @@ export function SendFlow({ onClose }: { onClose?: () => void }) {
       return;
     }
 
-    const destinationChainId = parseInt(destChainId);
+    const destinationChainId = parseInt(effectiveDestChainId, 10);
     const destinationChain = supportedChains.find((c) => c.id === destinationChainId);
     
     if (!destinationChain || !isGatewaySupported(destinationChainId)) {
@@ -170,14 +171,14 @@ export function SendFlow({ onClose }: { onClose?: () => void }) {
       return;
     }
 
-    if (!isGatewaySupported(chainId)) {
+    if (connectedChainId != null && !isGatewaySupported(connectedChainId)) {
       toast.error("Please switch to a Gateway-supported chain");
       return;
     }
 
     // Check Gateway unified balance
     const transferFee = amountValue * 0.00005;
-    const estimatedGas = chainId === 11155111 ? 2.00 : 0.05;
+    const estimatedGas = connectedChainId === 11155111 ? 2.00 : 0.05;
     const estimatedFee = transferFee + estimatedGas;
     try {
       const balanceRes = await getGatewayBalances(address);
@@ -197,7 +198,7 @@ export function SendFlow({ onClose }: { onClose?: () => void }) {
       setTxStep("signing");
       
       const burnIntent = createBurnIntent({
-        sourceChainId: chainId,
+        sourceChainId: connectedChainId!,
         destinationChainId,
         depositorAddress: address,
         recipientAddress: recipientAddress as Address,
@@ -233,7 +234,7 @@ export function SendFlow({ onClose }: { onClose?: () => void }) {
       const attestationHex = attestationPayload.startsWith("0x") ? (attestationPayload as Hex) : (`0x${attestationPayload}` as Hex);
       const signatureHex = operatorSignature.startsWith("0x") ? (operatorSignature as Hex) : (`0x${operatorSignature}` as Hex);
 
-      if (chainId !== destinationChainId) {
+      if (connectedChainId !== destinationChainId) {
         setTxStep("switching");
         const destChainName = destinationChain?.name ?? "destination chain";
         toast.info(`Approve switching to ${destChainName} to credit the recipient`);
@@ -348,20 +349,20 @@ export function SendFlow({ onClose }: { onClose?: () => void }) {
             </div>
             <div className="space-y-2">
               <Label className="text-sm">Destination chain</Label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 {[...supportedChains]
                   .filter((c) => isGatewaySupported(c.id))
                   .sort((a, b) => (a.id === arcTestnet.id ? -1 : b.id === arcTestnet.id ? 1 : 0))
                   .map((chain) => {
                     const info = getChainInfo(chain.id);
                     const iconUrl = CHAIN_ICON_URLS[chain.id] ?? getChainIconUrl(chain.id);
-                    const isSelected = (destChainId || arcTestnet.id.toString()) === chain.id.toString();
+                    const isSelected = effectiveDestChainId === chain.id.toString();
                     return (
                       <button
                         key={chain.id}
                         type="button"
                         onClick={() => setDestChainId(chain.id.toString())}
-                        className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border transition-all min-h-[64px] justify-center ${
+                        className={`flex items-center gap-3 p-3 rounded-xl border transition-all min-h-[56px] text-left ${
                           isSelected
                             ? "border-primary bg-primary/10 ring-1 ring-primary/20"
                             : "border-border/60 bg-secondary/30 hover:border-border hover:bg-secondary/50"
@@ -377,10 +378,12 @@ export function SendFlow({ onClose }: { onClose?: () => void }) {
                             </span>
                           )}
                         </div>
-                        <p className="text-xs font-medium truncate w-full text-center">{chain.name}</p>
-                        {info?.attestationTime && (
-                          <p className="text-[10px] text-muted-foreground">{info.attestationTime}</p>
-                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-foreground">{chain.name}</p>
+                          {info?.attestationTime && (
+                            <p className="text-xs text-muted-foreground">{info.attestationTime}</p>
+                          )}
+                        </div>
                         {isSelected && <Check className="w-4 h-4 text-primary shrink-0" />}
                       </button>
                     );
@@ -491,8 +494,8 @@ export function SendFlow({ onClose }: { onClose?: () => void }) {
                 <code className="flex-1 text-xs font-mono truncate text-foreground">
                   {mintTxHash}
                 </code>
-                {destChainId && (() => {
-                  const destInfo = getChainInfo(parseInt(destChainId));
+                {effectiveDestChainId && (() => {
+                  const destInfo = getChainInfo(parseInt(effectiveDestChainId, 10));
                   const explorerUrl = destInfo.chain?.blockExplorers?.default?.url;
                   return explorerUrl ? (
                     <a

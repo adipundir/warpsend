@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useAccount } from "wagmi";
+import { useState, useEffect } from "react";
+import { useAccount, useChainId } from "wagmi";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -12,15 +12,25 @@ import { Copy, Download, QrCode, RefreshCw, Check } from "lucide-react";
 
 export function ReceiveFlow({ onClose }: { onClose?: () => void }) {
   const { address, isConnected } = useAccount();
-  
+  const connectedChainId = useChainId();
+
   const [amount, setAmount] = useState("");
-  const [chainId, setChainId] = useState(arcTestnet.id.toString());
+  const [chainId, setChainId] = useState("");
   const [qrData, setQrData] = useState<string | null>(null);
 
-  const selectedChain = supportedChains.find(c => c.id.toString() === chainId);
+  useEffect(() => {
+    if (connectedChainId != null) {
+      setChainId(
+        isGatewaySupported(connectedChainId) ? connectedChainId.toString() : arcTestnet.id.toString()
+      );
+    }
+  }, [connectedChainId]);
+
+  const effectiveChainId = chainId || arcTestnet.id.toString();
+  const selectedChain = supportedChains.find((c) => c.id.toString() === effectiveChainId);
 
   const handleGenerateQR = () => {
-    if (!address || !amount || !chainId) {
+    if (!address || !amount || !effectiveChainId) {
       toast.error("Please enter an amount");
       return;
     }
@@ -35,7 +45,7 @@ export function ReceiveFlow({ onClose }: { onClose?: () => void }) {
       type: "warpsend-payment-request",
       address: address,
       amount,
-      chainId,
+      chainId: effectiveChainId,
       timestamp: Date.now(),
     };
 
@@ -156,39 +166,39 @@ export function ReceiveFlow({ onClose }: { onClose?: () => void }) {
 
             <div className="space-y-2">
               <Label className="text-sm font-medium">Receive on</Label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 {supportedChains
                   .filter((c) => isGatewaySupported(c.id))
                   .sort((a, b) => (a.id === arcTestnet.id ? -1 : b.id === arcTestnet.id ? 1 : 0))
                   .map((chain) => {
                     const info = getChainInfo(chain.id);
                     const iconUrl = CHAIN_ICON_URLS[chain.id] ?? getChainIconUrl(chain.id);
-                    const isSelected = chainId === chain.id.toString();
+                    const isSelected = effectiveChainId === chain.id.toString();
                     return (
                       <button
                         key={chain.id}
                         type="button"
                         onClick={() => setChainId(chain.id.toString())}
-                        className={`flex items-center gap-2 p-3 rounded-xl border text-left transition-all min-h-[52px] ${
+                        className={`flex items-center gap-3 p-3 rounded-xl border text-left transition-all min-h-[56px] ${
                           isSelected
                             ? "border-primary bg-primary/10 ring-1 ring-primary/20"
                             : "border-border/60 bg-secondary/30 hover:border-border hover:bg-secondary/50"
                         }`}
                       >
-                        <div className="w-8 h-8 rounded-lg bg-background flex items-center justify-center overflow-hidden shrink-0">
+                        <div className="w-10 h-10 rounded-lg bg-background flex items-center justify-center overflow-hidden shrink-0">
                           {iconUrl ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img src={iconUrl} alt="" className="w-full h-full object-cover" />
                           ) : (
-                            <span className="text-xs font-semibold text-muted-foreground">
+                            <span className="text-sm font-semibold text-muted-foreground">
                               {chain.name.charAt(0)}
                             </span>
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs font-medium truncate">{chain.name}</p>
+                          <p className="text-sm font-medium text-foreground">{chain.name}</p>
                           {info?.attestationTime && (
-                            <p className="text-[10px] text-muted-foreground truncate">
+                            <p className="text-xs text-muted-foreground">
                               {info.attestationTime}
                             </p>
                           )}

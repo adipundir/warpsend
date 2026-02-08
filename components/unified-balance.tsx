@@ -58,7 +58,7 @@ export function UnifiedBalance({
   const [chainBalances, setChainBalances] = useState<ChainBalance[]>([]);
   const [isLoadingBalances, setIsLoadingBalances] = useState(false);
   const [depositAmount, setDepositAmount] = useState("");
-  const [selectedDepositChain, setSelectedDepositChain] = useState<string>(arcTestnet.id.toString());
+  const [selectedDepositChain, setSelectedDepositChain] = useState<string>("");
   const [isDepositing, setIsDepositing] = useState(false);
   const [internalDepositOpen, setInternalDepositOpen] = useState(false);
 
@@ -67,11 +67,17 @@ export function UnifiedBalance({
   const setDepositModalOpen = isControlled ? (open: boolean) => onDepositModalOpenChange?.(open) : setInternalDepositOpen;
 
   const currentChain = supportedChains.find((c) => c.id === chainId);
-  const depositChainId = parseInt(selectedDepositChain);
+  const effectiveDepositChainIdRaw = selectedDepositChain ? parseInt(selectedDepositChain, 10) : (chainId ?? arcTestnet.id);
+  const depositChainId = Number.isNaN(effectiveDepositChainIdRaw) ? (chainId ?? arcTestnet.id) : effectiveDepositChainIdRaw;
   const depositChainInfo = getChainInfo(depositChainId);
   const usdcAddress = USDC_ADDRESSES[depositChainId];
 
-  // Read wallet USDC balance for connected chain
+  // Keep deposit selection in sync with connected chain when user switches
+  useEffect(() => {
+    if (chainId != null) setSelectedDepositChain(chainId.toString());
+  }, [chainId]);
+
+  // Read wallet USDC balance for connected chain (header/summary)
   const { data: walletBalance, refetch: refetchWalletBalance } = useReadContract({
     address: USDC_ADDRESSES[chainId],
     abi: ERC20_ABI,
@@ -79,6 +85,18 @@ export function UnifiedBalance({
     args: address ? [address] : undefined,
     query: {
       enabled: !!address && !!USDC_ADDRESSES[chainId],
+    },
+  });
+
+  // Read wallet USDC balance for selected deposit chain (so we can show it without requiring a chain switch)
+  const { data: selectedChainBalance, isPending: isSelectedChainBalancePending } = useReadContract({
+    address: USDC_ADDRESSES[depositChainId],
+    abi: ERC20_ABI,
+    functionName: "balanceOf",
+    args: address ? [address] : undefined,
+    chainId: depositChainId,
+    query: {
+      enabled: !!address && !!USDC_ADDRESSES[depositChainId] && !Number.isNaN(depositChainId),
     },
   });
 
@@ -203,9 +221,9 @@ export function UnifiedBalance({
   };
 
   const formattedWalletBalance = walletBalance ? parseUSDCAmount(walletBalance) : "0";
-  // In modal, use connected chain balance when selected chain matches; otherwise 0 (switch to see balance)
+  // In modal, show balance for the selected deposit chain (read via chainId in useReadContract — no switch needed)
   const modalWalletBalance =
-    depositChainId === chainId ? formattedWalletBalance : "0";
+    selectedChainBalance != null ? parseUSDCAmount(selectedChainBalance) : "0";
   const modalWalletBalanceNum = parseFloat(modalWalletBalance);
 
   // Show all gateway chains (with 0 balance) before first fetch; Arc Testnet first
@@ -242,11 +260,11 @@ export function UnifiedBalance({
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
         <div>
-          <h2 className="text-xl font-semibold mb-1">Gateway unified balance</h2>
-          <p className="text-sm text-muted-foreground">Total USDC across all chains</p>
+          <h2 className="text-2xl md:text-3xl font-bold mb-1">Gateway unified balance</h2>
+          <p className="text-base font-medium text-muted-foreground">Total USDC across all chains</p>
         </div>
         {connectedChainUsdcAddress && connectedChain && (
-          <div className="rounded-xl border border-border/60 bg-card/50 dark:bg-white/[0.02] p-4 flex items-center gap-3 shrink-0">
+          <div className="rounded-xl border border-border/60 bg-card/50 dark:bg-white/[0.02] p-4 flex items-center gap-3 shrink-0 min-w-[160px]">
             <div className="w-10 h-10 rounded-lg bg-secondary/80 flex items-center justify-center overflow-hidden shrink-0">
               {(CHAIN_ICON_URLS[chainId] ?? getChainIconUrl(chainId)) ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -261,11 +279,11 @@ export function UnifiedBalance({
                 </span>
               )}
             </div>
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <p className="text-xs font-medium text-muted-foreground truncate">
                 {connectedChain.name}
               </p>
-              <p className="text-base font-mono font-semibold tabular-nums">
+              <p className="text-base font-mono font-semibold tabular-nums whitespace-nowrap">
                 {connectedChainWalletBalanceStr ?? "—"} USDC
               </p>
             </div>
@@ -332,13 +350,13 @@ export function UnifiedBalance({
             {/* Wallet balance for selected chain */}
             <div className="flex items-center justify-between p-5 rounded-xl bg-secondary/30 border border-border/50">
               <div>
-                <p className="text-sm text-muted-foreground">Wallet balance</p>
+                <p className="text-sm text-muted-foreground">Wallet balance on {depositChainInfo.chain?.name ?? "selected chain"}</p>
                 <p className="text-2xl font-bold tabular-nums">
-                  {modalWalletBalance} USDC
+                  {isSelectedChainBalancePending ? "…" : `${modalWalletBalance} USDC`}
                 </p>
                 {depositChainId !== chainId && (
                   <p className="text-xs text-muted-foreground mt-1">
-                    Switch to {depositChainInfo.chain?.name} to see balance
+                    You’ll switch to {depositChainInfo.chain?.name} when you confirm deposit
                   </p>
                 )}
               </div>
@@ -348,13 +366,13 @@ export function UnifiedBalance({
             {/* Source chain: grid of cards */}
             <div className="space-y-2">
               <Label className="text-sm font-medium">Source chain</Label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 {[...supportedChains]
                   .sort((a, b) => (a.id === arcTestnet.id ? -1 : b.id === arcTestnet.id ? 1 : 0))
                   .map((chain) => {
                     const info = getChainInfo(chain.id);
                     const iconUrl = CHAIN_ICON_URLS[chain.id] ?? getChainIconUrl(chain.id);
-                    const isSelected = selectedDepositChain === chain.id.toString();
+                    const isSelected = (selectedDepositChain || chainId?.toString() || arcTestnet.id.toString()) === chain.id.toString();
                     const isCurrent = chain.id === chainId;
                     return (
                       <button
@@ -362,31 +380,31 @@ export function UnifiedBalance({
                         type="button"
                         disabled={isDepositing}
                         onClick={() => setSelectedDepositChain(chain.id.toString())}
-                        className={`flex items-center gap-2 p-3 rounded-xl border text-left transition-all min-h-[56px] ${
+                        className={`flex items-center gap-3 p-3 rounded-xl border text-left transition-all min-h-[56px] ${
                           isSelected
                             ? "border-primary bg-primary/10 ring-1 ring-primary/20"
                             : "border-border/60 bg-secondary/30 hover:border-border hover:bg-secondary/50"
                         }`}
                       >
-                        <div className="w-9 h-9 rounded-lg bg-background flex items-center justify-center overflow-hidden shrink-0">
+                        <div className="w-10 h-10 rounded-lg bg-background flex items-center justify-center overflow-hidden shrink-0">
                           {iconUrl ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img src={iconUrl} alt="" className="w-full h-full object-cover" />
                           ) : (
-                            <span className="text-xs font-semibold text-muted-foreground">
+                            <span className="text-sm font-semibold text-muted-foreground">
                               {chain.name.charAt(0)}
                             </span>
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs font-medium truncate flex items-center gap-1">
+                          <p className="text-sm font-medium text-foreground flex items-center gap-1 flex-wrap">
                             {chain.name}
                             {isCurrent && (
-                              <span className="text-[10px] text-muted-foreground font-normal">(current)</span>
+                              <span className="text-xs text-muted-foreground font-normal">(current)</span>
                             )}
                           </p>
                           {info?.attestationTime && (
-                            <p className="text-[10px] text-muted-foreground truncate">
+                            <p className="text-xs text-muted-foreground">
                               {info.attestationTime}
                             </p>
                           )}

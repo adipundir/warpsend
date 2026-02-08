@@ -213,8 +213,8 @@ export const CHAIN_ICON_URLS: Record<number, string> = {
   [sepolia.id]: "/logos/eth.svg",
   [baseSepolia.id]: "/logos/base.png",
   [avalancheFuji.id]: "/logos/evalanche.png",
-  [sonicTestnet.id]: getChainIconUrl(sonicTestnet.id),
-  [worldchainSepolia.id]: getChainIconUrl(worldchainSepolia.id),
+  [sonicTestnet.id]: "/logos/sonic.png",
+  [worldchainSepolia.id]: "/logos/world.png",
   [hyperliquidEvmTestnet.id]: "/logos/hyperevm.png",
   [seiTestnet.id]: "/logos/sei.png",
 };

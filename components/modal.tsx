@@ -44,7 +44,7 @@ export function Modal({ open, onClose, children, className }: ModalProps) {
       <div
         ref={panelRef}
         className={cn(
-          "relative w-full max-w-[calc(100vw-2rem)] sm:max-w-md max-h-[90vh] overflow-y-auto rounded-2xl border border-border/60 bg-card shadow-xl animate-in zoom-in-95 fade-in-0 duration-200",
+          "relative w-full max-w-[calc(100vw-2rem)] sm:max-w-xl max-h-[90vh] overflow-y-auto rounded-2xl border border-border/60 bg-card shadow-xl animate-in zoom-in-95 fade-in-0 duration-200",
           className
         )}
         onClick={(e) => e.stopPropagation()}

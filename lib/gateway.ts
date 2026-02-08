@@ -171,31 +171,37 @@ export interface GatewayTransferResponse {
 export interface GatewayBalanceResponse {
   balances: Array<{
     domain: number;
-    balance: string;
+    depositor?: string;
+    balance: string; // USDC amount as string, e.g. "9.998950"
   }>;
 }
 
-// Request attestation from Gateway API
+// Request attestation from Gateway API (Circle docs: POST /v1/transfer, 201 = success)
+// Request: array of { burnIntent: BurnIntent, signature: string }; BurnIntent uses Uint256 as string, Bytes32 as 0x+64 hex
 export async function requestGatewayTransfer(
   burnIntents: Array<{
     burnIntent: ReturnType<typeof createBurnIntent>;
     signature: string;
   }>
 ): Promise<GatewayTransferResponse> {
+  const body = JSON.stringify(burnIntents, (_key, value) =>
+    typeof value === "bigint" ? value.toString() : value
+  );
   const response = await fetch(`${GATEWAY_API_TESTNET}/transfer`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(burnIntents, (_key, value) =>
-      typeof value === "bigint" ? value.toString() : value
-    ),
+    body,
   });
 
+  const json = await response.json().catch(() => ({}));
   if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Gateway API error: ${response.status} ${text}`);
+    const msg = (json as { error?: string; message?: string }).error ?? (json as { message?: string }).message ?? response.statusText;
+    throw new Error(`Gateway API error: ${response.status} ${msg}`);
   }
-
-  return response.json();
+  if ((json as { error?: string }).error) {
+    throw new Error((json as { error: string }).error);
+  }
+  return json as GatewayTransferResponse;
 }
 
 // Get Gateway balances for an address

@@ -14,20 +14,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Modal } from "@/components/modal";
+import { Check } from "lucide-react";
 import { toast } from "sonner";
 import {
   supportedChains,
@@ -50,7 +38,17 @@ interface ChainBalance {
   gatewayBalance: string;
 }
 
-export function UnifiedBalance() {
+type UnifiedBalanceVariant = "full" | "summary";
+
+export function UnifiedBalance({
+  variant = "full",
+  depositModalOpen: controlledDepositOpen,
+  onDepositModalOpenChange,
+}: {
+  variant?: UnifiedBalanceVariant;
+  depositModalOpen?: boolean;
+  onDepositModalOpenChange?: (open: boolean) => void;
+}) {
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
   const { switchChain } = useSwitchChain();
@@ -62,7 +60,11 @@ export function UnifiedBalance() {
   const [depositAmount, setDepositAmount] = useState("");
   const [selectedDepositChain, setSelectedDepositChain] = useState<string>(arcTestnet.id.toString());
   const [isDepositing, setIsDepositing] = useState(false);
-  const [depositModalOpen, setDepositModalOpen] = useState(false);
+  const [internalDepositOpen, setInternalDepositOpen] = useState(false);
+
+  const isControlled = controlledDepositOpen !== undefined && onDepositModalOpenChange;
+  const depositModalOpen = isControlled ? controlledDepositOpen : internalDepositOpen;
+  const setDepositModalOpen = isControlled ? (open: boolean) => onDepositModalOpenChange?.(open) : setInternalDepositOpen;
 
   const currentChain = supportedChains.find((c) => c.id === chainId);
   const depositChainId = parseInt(selectedDepositChain);
@@ -98,8 +100,8 @@ export function UnifiedBalance() {
         const domain = GATEWAY_DOMAINS[chain.id];
         if (domain === undefined) continue;
 
-        const gatewayBal = response.balances.find((b) => b.domain === domain);
-        const gatewayAmount = gatewayBal ? parseFloat(gatewayBal.balance) : 0;
+        const gatewayBal = response.balances.find((b) => Number(b.domain) === domain);
+        const gatewayAmount = gatewayBal ? parseFloat(String(gatewayBal.balance)) : 0;
         total += gatewayAmount;
 
         balances.push({
@@ -131,11 +133,14 @@ export function UnifiedBalance() {
   // Refresh balance when a send or deposit completes (other components dispatch this event)
   useEffect(() => {
     const onBalanceChanged = () => {
-      if (address) fetchUnifiedBalance();
+      if (address) {
+        fetchUnifiedBalance();
+        refetchWalletBalance();
+      }
     };
     window.addEventListener("warpsend-balance-changed", onBalanceChanged);
     return () => window.removeEventListener("warpsend-balance-changed", onBalanceChanged);
-  }, [address, fetchUnifiedBalance]);
+  }, [address, fetchUnifiedBalance, refetchWalletBalance]);
 
   // Handle deposit to Gateway
   const handleDeposit = async () => {
@@ -148,7 +153,6 @@ export function UnifiedBalance() {
 
     // Check if we need to switch chains
     if (chainId !== depositChainId) {
-      toast.info(`Switching to ${depositChainInfo.chain?.name}...`);
       try {
         await switchChain({ chainId: depositChainId });
         // Wait for chain switch
@@ -161,9 +165,6 @@ export function UnifiedBalance() {
 
     setIsDepositing(true);
     try {
-      // Step 1: Approve Gateway Wallet
-      toast.info("Approving USDC for Gateway deposit...");
-
       const approveHash = await writeContractAsync({
         address: usdcAddress,
         abi: ERC20_ABI,
@@ -172,10 +173,6 @@ export function UnifiedBalance() {
       });
 
       await publicClient.waitForTransactionReceipt({ hash: approveHash });
-      toast.success("Approved!");
-
-      // Step 2: Deposit to Gateway Wallet
-      toast.info("Depositing to Gateway...");
 
       const depositHash = await writeContractAsync({
         address: GATEWAY_WALLET_ADDRESS,
@@ -186,8 +183,7 @@ export function UnifiedBalance() {
 
       await publicClient.waitForTransactionReceipt({ hash: depositHash });
       
-      toast.success(`Deposited ${depositAmount} USDC to Gateway!`);
-      toast.info(`Waiting for attestation (${depositChainInfo.attestationTime})...`);
+      toast.success(`Deposited ${depositAmount} USDC to Gateway`);
 
       setDepositAmount("");
       setDepositModalOpen(false);
@@ -235,13 +231,48 @@ export function UnifiedBalance() {
     );
   }
 
+  const connectedChainUsdcAddress = chainId !== undefined ? USDC_ADDRESSES[chainId] : undefined;
+  const connectedChainWalletBalanceStr =
+    walletBalance !== undefined && connectedChainUsdcAddress
+      ? parseUSDCAmount(walletBalance)
+      : null;
+  const connectedChain = currentChain;
+
   return (
     <div className="space-y-6">
-      <div className="mb-4">
-        <h2 className="text-xl font-semibold mb-1">Gateway unified balance</h2>
-        <p className="text-sm text-muted-foreground">Total USDC across all chains</p>
+      <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
+        <div>
+          <h2 className="text-xl font-semibold mb-1">Gateway unified balance</h2>
+          <p className="text-sm text-muted-foreground">Total USDC across all chains</p>
+        </div>
+        {connectedChainUsdcAddress && connectedChain && (
+          <div className="rounded-xl border border-border/60 bg-card/50 dark:bg-white/[0.02] p-4 flex items-center gap-3 shrink-0">
+            <div className="w-10 h-10 rounded-lg bg-secondary/80 flex items-center justify-center overflow-hidden shrink-0">
+              {(CHAIN_ICON_URLS[chainId] ?? getChainIconUrl(chainId)) ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={CHAIN_ICON_URLS[chainId] ?? getChainIconUrl(chainId)}
+                  alt=""
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="text-sm font-semibold text-muted-foreground">
+                  {connectedChain.name?.charAt(0) ?? "?"}
+                </span>
+              )}
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-medium text-muted-foreground truncate">
+                {connectedChain.name}
+              </p>
+              <p className="text-base font-mono font-semibold tabular-nums">
+                {connectedChainWalletBalanceStr ?? "—"} USDC
+              </p>
+            </div>
+          </div>
+        )}
       </div>
-      
+
       {/* Main balance display */}
       <div className="text-center py-8 rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/10">
         <p className="text-sm font-medium text-muted-foreground mb-2">Available to send</p>
@@ -249,16 +280,18 @@ export function UnifiedBalance() {
           {isLoadingBalances ? "..." : unifiedBalance}
         </p>
         <p className="text-lg text-muted-foreground font-medium">USDC</p>
-        <Button
-          className="mt-5 rounded-xl px-6 py-5 text-sm font-semibold"
-          onClick={() => setDepositModalOpen(true)}
-        >
-          Deposit into Gateway
-        </Button>
+        {!isControlled && (
+          <Button
+            className="mt-5 h-12 rounded-xl px-6 text-sm font-semibold w-full max-w-xs mx-auto"
+            onClick={() => setDepositModalOpen(true)}
+          >
+            Deposit into Gateway
+          </Button>
+        )}
       </div>
 
-      {/* Per-chain balance cards */}
-      {displayChainBalances.length > 0 && (
+      {/* Per-chain balance cards - only when variant is full */}
+      {variant === "full" && displayChainBalances.length > 0 && (
         <div>
           <h3 className="text-sm font-medium text-muted-foreground mb-3">Balance by chain</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
@@ -294,17 +327,8 @@ export function UnifiedBalance() {
         </div>
       )}
 
-      {/* Deposit to Gateway modal */}
-      <Dialog open={depositModalOpen} onOpenChange={setDepositModalOpen}>
-        <DialogContent className="sm:max-w-md rounded-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-xl">Deposit to Gateway</DialogTitle>
-            <DialogDescription>
-              Add USDC to your unified balance from any supported chain
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-5 pt-2">
+      <Modal open={depositModalOpen} onClose={() => setDepositModalOpen(false)}>
+          <div className="space-y-5">
             {/* Wallet balance for selected chain */}
             <div className="flex items-center justify-between p-5 rounded-xl bg-secondary/30 border border-border/50">
               <div>
@@ -321,29 +345,59 @@ export function UnifiedBalance() {
               <Badge variant="secondary" className="rounded-lg px-3 py-1">{depositChainInfo.chain?.name ?? "—"}</Badge>
             </div>
 
-            {/* Chain selection */}
+            {/* Source chain: grid of cards */}
             <div className="space-y-2">
-              <Label className="text-sm font-medium">Select source chain</Label>
-              <Select
-                value={selectedDepositChain}
-                onValueChange={setSelectedDepositChain}
-                disabled={isDepositing}
-              >
-                <SelectTrigger className="rounded-xl h-12 bg-secondary/30 border-border/50">
-                  <SelectValue placeholder="Select chain" />
-                </SelectTrigger>
-                <SelectContent className="rounded-xl">
-                  {supportedChains.map((chain) => (
-                    <SelectItem key={chain.id} value={chain.id.toString()} className="rounded-lg">
-                      {chain.name}
-                      {chain.id === chainId && " (Current)"}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                Attestation time: {depositChainInfo.attestationTime}
-              </p>
+              <Label className="text-sm font-medium">Source chain</Label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {[...supportedChains]
+                  .sort((a, b) => (a.id === arcTestnet.id ? -1 : b.id === arcTestnet.id ? 1 : 0))
+                  .map((chain) => {
+                    const info = getChainInfo(chain.id);
+                    const iconUrl = CHAIN_ICON_URLS[chain.id] ?? getChainIconUrl(chain.id);
+                    const isSelected = selectedDepositChain === chain.id.toString();
+                    const isCurrent = chain.id === chainId;
+                    return (
+                      <button
+                        key={chain.id}
+                        type="button"
+                        disabled={isDepositing}
+                        onClick={() => setSelectedDepositChain(chain.id.toString())}
+                        className={`flex items-center gap-2 p-3 rounded-xl border text-left transition-all min-h-[56px] ${
+                          isSelected
+                            ? "border-primary bg-primary/10 ring-1 ring-primary/20"
+                            : "border-border/60 bg-secondary/30 hover:border-border hover:bg-secondary/50"
+                        }`}
+                      >
+                        <div className="w-9 h-9 rounded-lg bg-background flex items-center justify-center overflow-hidden shrink-0">
+                          {iconUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={iconUrl} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="text-xs font-semibold text-muted-foreground">
+                              {chain.name.charAt(0)}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium truncate flex items-center gap-1">
+                            {chain.name}
+                            {isCurrent && (
+                              <span className="text-[10px] text-muted-foreground font-normal">(current)</span>
+                            )}
+                          </p>
+                          {info?.attestationTime && (
+                            <p className="text-[10px] text-muted-foreground truncate">
+                              {info.attestationTime}
+                            </p>
+                          )}
+                        </div>
+                        {isSelected && (
+                          <Check className="w-4 h-4 text-primary shrink-0" />
+                        )}
+                      </button>
+                    );
+                  })}
+              </div>
             </div>
 
             {/* Amount with 25% 50% Max */}
@@ -425,8 +479,7 @@ export function UnifiedBalance() {
               </a>
             </p>
           </div>
-        </DialogContent>
-      </Dialog>
+      </Modal>
     </div>
   );
 }

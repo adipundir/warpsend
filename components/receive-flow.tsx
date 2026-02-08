@@ -5,13 +5,12 @@ import { useAccount } from "wagmi";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { supportedChains, getChainInfo, isGatewaySupported, arcTestnet } from "@/lib/chains";
+import { supportedChains, getChainInfo, isGatewaySupported, arcTestnet, CHAIN_ICON_URLS, getChainIconUrl } from "@/lib/chains";
 import { QRCodeSVG } from "qrcode.react";
-import { Copy, Download, QrCode, RefreshCw } from "lucide-react";
+import { Copy, Download, QrCode, RefreshCw, Check } from "lucide-react";
 
-export function ReceiveFlow() {
+export function ReceiveFlow({ onClose }: { onClose?: () => void }) {
   const { address, isConnected } = useAccount();
   
   const [amount, setAmount] = useState("");
@@ -41,13 +40,11 @@ export function ReceiveFlow() {
     };
 
     setQrData(JSON.stringify(paymentRequest));
-    toast.success("QR code generated!");
   };
 
   const handleCopyData = () => {
     if (qrData) {
       navigator.clipboard.writeText(qrData);
-      toast.success("Payment data copied");
     }
   };
 
@@ -67,7 +64,6 @@ export function ReceiveFlow() {
         a.href = url;
         a.download = `warpsend-${amount}-usdc.png`;
         a.click();
-        toast.success("QR code downloaded");
       };
       img.src = "data:image/svg+xml;base64," + btoa(svgData);
     }
@@ -114,20 +110,27 @@ export function ReceiveFlow() {
           </div>
 
           <div className="flex gap-3">
-            <Button onClick={handleCopyData} variant="outline" className="flex-1 rounded-xl h-11">
-              <Copy className="w-4 h-4 mr-2" />
+            <Button onClick={handleCopyData} variant="outline" className="flex-1 rounded-xl h-12 min-h-[48px]">
+              <Copy className="w-4 h-4 mr-2 shrink-0" />
               Copy
             </Button>
-            <Button onClick={handleDownloadQR} variant="outline" className="flex-1 rounded-xl h-11">
-              <Download className="w-4 h-4 mr-2" />
+            <Button onClick={handleDownloadQR} variant="outline" className="flex-1 rounded-xl h-12 min-h-[48px]">
+              <Download className="w-4 h-4 mr-2 shrink-0" />
               Save
             </Button>
           </div>
 
-          <Button onClick={handleReset} variant="ghost" className="w-full rounded-xl">
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Create New Request
-          </Button>
+          <div className="flex gap-2 w-full">
+            <Button onClick={handleReset} variant="ghost" className="flex-1 rounded-xl h-11">
+              <RefreshCw className="w-4 h-4 mr-2 shrink-0" />
+              New Request
+            </Button>
+            {onClose && (
+              <Button variant="outline" className="flex-1 rounded-xl h-11" onClick={onClose}>
+                Close
+              </Button>
+            )}
+          </div>
         </div>
       ) : (
         /* Form to Generate QR */
@@ -156,26 +159,50 @@ export function ReceiveFlow() {
 
             <div className="space-y-2">
               <Label className="text-sm font-medium">Receive on</Label>
-              <Select value={chainId} onValueChange={setChainId}>
-                <SelectTrigger className="rounded-xl h-11 bg-secondary/30 border-border/50">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="rounded-xl">
-                  {supportedChains.filter(chain => isGatewaySupported(chain.id)).map((chain) => {
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {supportedChains
+                  .filter((c) => isGatewaySupported(c.id))
+                  .sort((a, b) => (a.id === arcTestnet.id ? -1 : b.id === arcTestnet.id ? 1 : 0))
+                  .map((chain) => {
                     const info = getChainInfo(chain.id);
+                    const iconUrl = CHAIN_ICON_URLS[chain.id] ?? getChainIconUrl(chain.id);
+                    const isSelected = chainId === chain.id.toString();
                     return (
-                      <SelectItem key={chain.id} value={chain.id.toString()} className="rounded-lg">
-                        {chain.name}
-                        {info?.attestationTime && (
-                          <span className="text-xs text-muted-foreground ml-2">
-                            ({info.attestationTime})
-                          </span>
+                      <button
+                        key={chain.id}
+                        type="button"
+                        onClick={() => setChainId(chain.id.toString())}
+                        className={`flex items-center gap-2 p-3 rounded-xl border text-left transition-all min-h-[52px] ${
+                          isSelected
+                            ? "border-primary bg-primary/10 ring-1 ring-primary/20"
+                            : "border-border/60 bg-secondary/30 hover:border-border hover:bg-secondary/50"
+                        }`}
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-background flex items-center justify-center overflow-hidden shrink-0">
+                          {iconUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={iconUrl} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="text-xs font-semibold text-muted-foreground">
+                              {chain.name.charAt(0)}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium truncate">{chain.name}</p>
+                          {info?.attestationTime && (
+                            <p className="text-[10px] text-muted-foreground truncate">
+                              {info.attestationTime}
+                            </p>
+                          )}
+                        </div>
+                        {isSelected && (
+                          <Check className="w-4 h-4 text-primary shrink-0" />
                         )}
-                      </SelectItem>
+                      </button>
                     );
                   })}
-                </SelectContent>
-              </Select>
+              </div>
             </div>
 
             <div className="p-3 rounded-xl bg-secondary/30 border border-border/50">
@@ -184,14 +211,26 @@ export function ReceiveFlow() {
             </div>
           </div>
 
-          <Button 
-            onClick={handleGenerateQR} 
-            disabled={!amount || parseFloat(amount) <= 0}
-            className="w-full h-12 rounded-xl text-sm font-semibold"
-          >
-            <QrCode className="w-4 h-4 mr-2" />
-            Generate QR Code
-          </Button>
+          <div className="flex gap-3">
+            <Button 
+              onClick={handleGenerateQR} 
+              disabled={!amount || parseFloat(amount) <= 0}
+              className="flex-1 h-12 rounded-xl text-sm font-semibold min-h-[48px]"
+            >
+              <QrCode className="w-4 h-4 mr-2 shrink-0" />
+              Generate QR Code
+            </Button>
+            {onClose && (
+              <Button
+                type="button"
+                variant="outline"
+                className="h-12 rounded-xl min-h-[48px] px-4"
+                onClick={onClose}
+              >
+                Close
+              </Button>
+            )}
+          </div>
         </div>
       )}
     </div>

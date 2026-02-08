@@ -1,14 +1,15 @@
 import type { Metadata } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import { Plus_Jakarta_Sans, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import { Header } from "@/components/header";
 import { Toaster } from "@/components/ui/sonner";
 
-const inter = Inter({
+const plusJakarta = Plus_Jakarta_Sans({
   variable: "--font-sans",
   subsets: ["latin"],
   display: "swap",
+  weight: ["400", "500", "600", "700"],
 });
 
 const jetbrainsMono = JetBrains_Mono({
@@ -30,14 +31,14 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased min-h-screen`}
+        className={`${plusJakarta.variable} ${jetbrainsMono.variable} font-sans antialiased h-full flex flex-col overflow-hidden`}
       >
         <Providers>
           <Header />
-          <main>
+          <main className="flex-1 min-h-0 overflow-hidden">
             {children}
           </main>
-          <Toaster position="top-right" richColors />
+          <Toaster position="bottom-right" richColors />
         </Providers>
       </body>
     </html>

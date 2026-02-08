@@ -1,65 +1,74 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAccount, useChainId, useSwitchChain, useWriteContract, useSignTypedData } from "wagmi";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { type Address, type Hex } from "viem";
-import { supportedChains, GATEWAY_MINTER_ADDRESS, getChainInfo, isGatewaySupported } from "@/lib/chains";
+import { type Address, type Hex, isAddress } from "viem";
+import { supportedChains, GATEWAY_MINTER_ADDRESS, getChainInfo, isGatewaySupported, arcTestnet, CHAIN_ICON_URLS, getChainIconUrl } from "@/lib/chains";
+import { resolveEnsToAddress, looksLikeEnsName } from "@/lib/ens";
 import { GATEWAY_MINTER_ABI, createBurnIntent, createBurnIntentTypedData, requestGatewayTransfer, getGatewayBalances } from "@/lib/gateway";
-import { ScanLine, Send, CheckCircle2 } from "lucide-react";
+import { ScanLine, Send, CheckCircle2, PenLine, Check, ExternalLink } from "lucide-react";
 import { Html5Qrcode } from "html5-qrcode";
 
 type TxStep = "idle" | "signing" | "requesting" | "switching" | "minting" | "success";
 
-export function SendFlow() {
+export function SendFlow({ onClose }: { onClose?: () => void }) {
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
   const { switchChainAsync } = useSwitchChain();
   const { writeContractAsync } = useWriteContract();
   const { signTypedDataAsync } = useSignTypedData();
+  const scannerRef = useRef<Html5Qrcode | null>(null);
 
   const [recipient, setRecipient] = useState("");
   const [amount, setAmount] = useState("");
   const [destChainId, setDestChainId] = useState("");
   const [txStep, setTxStep] = useState<TxStep>("idle");
   const [scanning, setScanning] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const [manualEntry, setManualEntry] = useState(false);
   const [scannedData, setScannedData] = useState<{
     address: string;
     amount: string;
     chainId: string;
     chainName: string;
   } | null>(null);
+  const [mintTxHash, setMintTxHash] = useState<string | null>(null);
 
-  const handleScanQR = async () => {
-    setScanning(true);
-    setScannedData(null);
-    try {
-      const html5QrCode = new Html5Qrcode("qr-reader");
-      
-      await html5QrCode.start(
+  // Start camera only after qr-reader is in the DOM
+  useEffect(() => {
+    if (!scanning) return;
+    setCameraError(null);
+    const el = document.getElementById("qr-reader");
+    if (!el) return;
+
+    const html5QrCode = new Html5Qrcode("qr-reader");
+    scannerRef.current = html5QrCode;
+
+    html5QrCode
+      .start(
         { facingMode: "environment" },
-        {
-          fps: 10,
-          qrbox: { width: 250, height: 250 }
-        },
+        { fps: 10, qrbox: { width: 250, height: 250 } },
         (decodedText) => {
           try {
             const data = JSON.parse(decodedText);
             if (data.type === "warpsend-payment-request") {
-              const chain = supportedChains.find(c => c.id.toString() === data.chainId);
+              const chain = supportedChains.find((c) => c.id.toString() === String(data.chainId));
               setRecipient(data.address);
-              setAmount(data.amount);
-              setDestChainId(data.chainId);
+              setAmount(String(data.amount));
+              setDestChainId(String(data.chainId));
               setScannedData({
                 address: data.address,
-                amount: data.amount,
-                chainId: data.chainId,
+                amount: String(data.amount),
+                chainId: String(data.chainId),
                 chainName: chain?.name || "Unknown",
               });
-              toast.success("Payment request scanned!");
-              html5QrCode.stop();
+              scannerRef.current = null;
               setScanning(false);
+              // Let effect cleanup call stop() so we don't double-stop and throw
             } else {
               toast.error("Invalid WarpSend QR code");
             }
@@ -68,25 +77,84 @@ export function SendFlow() {
           }
         },
         () => {}
-      );
-    } catch (err) {
-      console.error("QR scan error:", err);
-      toast.error("Failed to start camera. Please allow camera access.");
-      setScanning(false);
-    }
+      )
+      .catch((err: Error) => {
+        console.error("QR scan error:", err);
+        setCameraError(
+          "Camera unavailable. Use HTTPS, allow camera permission in browser settings, or enter details manually below."
+        );
+        setScanning(false);
+        scannerRef.current = null;
+      });
+
+    return () => {
+      try {
+        html5QrCode.stop().catch(() => {});
+      } catch {
+        // Scanner may already be stopped (e.g. after successful scan)
+      }
+      scannerRef.current = null;
+    };
+  }, [scanning]);
+
+  const handleScanQR = () => {
+    setScanning(true);
+    setScannedData(null);
+    setCameraError(null);
   };
 
   const handleCancelScan = () => {
     setScanning(false);
-    try {
-      const html5QrCode = new Html5Qrcode("qr-reader");
-      html5QrCode.stop().catch(() => {});
-    } catch {}
+    setCameraError(null);
+    scannerRef.current?.stop().catch(() => {});
+    scannerRef.current = null;
+  };
+
+  const handleManualContinue = async () => {
+    const chainId = destChainId || arcTestnet.id.toString();
+    if (!recipient.trim() || !amount) {
+      toast.error("Fill in address and amount");
+      return;
+    }
+    let resolvedAddress = recipient.trim();
+    if (looksLikeEnsName(resolvedAddress)) {
+      const address = await resolveEnsToAddress(resolvedAddress);
+      if (!address) {
+        toast.error("Could not resolve ENS name. Check the name or use a 0x address.");
+        return;
+      }
+      resolvedAddress = address;
+    } else if (!isAddress(resolvedAddress)) {
+      toast.error("Invalid address. Enter a valid 0x address or ENS name.");
+      return;
+    }
+    const chain = supportedChains.find((c) => c.id.toString() === chainId);
+    setScannedData({
+      address: resolvedAddress,
+      amount,
+      chainId: chainId,
+      chainName: chain?.name || "Unknown",
+    });
+    setDestChainId(chainId);
+    setManualEntry(false);
   };
 
   const handleSend = async () => {
     if (!address || !recipient || !amount || !destChainId) {
-      toast.error("Please scan a payment QR code first");
+      toast.error("Enter payment details first");
+      return;
+    }
+
+    let recipientAddress = recipient.trim();
+    if (looksLikeEnsName(recipientAddress)) {
+      const resolved = await resolveEnsToAddress(recipientAddress);
+      if (!resolved) {
+        toast.error("Could not resolve ENS name. Check the name or use a 0x address.");
+        return;
+      }
+      recipientAddress = resolved;
+    } else if (!isAddress(recipientAddress)) {
+      toast.error("Invalid address. Enter a valid 0x address or ENS name.");
       return;
     }
 
@@ -129,13 +197,12 @@ export function SendFlow() {
 
     try {
       setTxStep("signing");
-      toast.info("Please sign the transaction...");
       
       const burnIntent = createBurnIntent({
         sourceChainId: chainId,
         destinationChainId,
         depositorAddress: address,
-        recipientAddress: recipient as Address,
+        recipientAddress: recipientAddress as Address,
         amount: amount,
       });
 
@@ -152,40 +219,44 @@ export function SendFlow() {
       }
 
       setTxStep("requesting");
-      toast.info("Getting attestation from Gateway...");
-      
-      const { attestation, signature: operatorSignature } = await requestGatewayTransfer([
+
+      const transferResponse = await requestGatewayTransfer([
         { burnIntent: typedData.message, signature },
       ]);
 
+      if (transferResponse.error) {
+        throw new Error(transferResponse.error || "Gateway transfer failed");
+      }
+      const attestationPayload = transferResponse.attestation;
+      const operatorSignature = transferResponse.signature;
+      if (!attestationPayload || !operatorSignature) {
+        throw new Error("No attestation from Gateway. Try again.");
+      }
+      const attestationHex = attestationPayload.startsWith("0x") ? (attestationPayload as Hex) : (`0x${attestationPayload}` as Hex);
+      const signatureHex = operatorSignature.startsWith("0x") ? (operatorSignature as Hex) : (`0x${operatorSignature}` as Hex);
+
       if (chainId !== destinationChainId) {
         setTxStep("switching");
-        toast.info(`Switching to ${destinationChain.name}...`);
+        const destChainName = destinationChain?.name ?? "destination chain";
+        toast.info(`Approve switching to ${destChainName} to credit the recipient`);
         await switchChainAsync({ chainId: destinationChainId });
         await new Promise((resolve) => setTimeout(resolve, 1500));
       }
 
       setTxStep("minting");
-      toast.info("Minting USDC...");
-      
-      await writeContractAsync({
+      toast.info(`Confirm mint on ${destinationChain?.name ?? "destination"} to send USDC to recipient`);
+
+      const hash = await writeContractAsync({
         address: GATEWAY_MINTER_ADDRESS,
         abi: GATEWAY_MINTER_ABI,
         functionName: "gatewayMint",
-        args: [attestation as Hex, operatorSignature as Hex],
+        args: [attestationHex, signatureHex],
+        chainId: destinationChainId,
       });
 
+      setMintTxHash(hash ?? null);
       setTxStep("success");
-      toast.success(`Sent ${amount} USDC!`);
       window.dispatchEvent(new CustomEvent("warpsend-balance-changed"));
-
-      setTimeout(() => {
-        setTxStep("idle");
-        setRecipient("");
-        setAmount("");
-        setDestChainId("");
-        setScannedData(null);
-      }, 3000);
     } catch (error: any) {
       console.error("Send error:", error);
       const msg = error?.message ?? "";
@@ -225,14 +296,106 @@ export function SendFlow() {
             <h3 className="text-lg font-semibold">Scan Payment QR</h3>
             <p className="text-sm text-muted-foreground">Point your camera at a WarpSend QR code</p>
           </div>
-          <div id="qr-reader" className="w-full rounded-xl overflow-hidden bg-black" />
-          <Button 
-            onClick={handleCancelScan} 
-            variant="outline" 
-            className="w-full rounded-xl h-12"
-          >
-            Cancel
-          </Button>
+          <div id="qr-reader" className="w-full rounded-xl overflow-hidden bg-black min-h-[250px]" />
+          {cameraError && (
+            <p className="text-sm text-muted-foreground text-center">{cameraError}</p>
+          )}
+          <div className="flex gap-2">
+            <Button
+              onClick={() => { handleCancelScan(); setManualEntry(true); }}
+              variant="outline"
+              className="flex-1 rounded-xl h-12"
+            >
+              <PenLine className="w-4 h-4 mr-2 shrink-0" />
+              Enter manually
+            </Button>
+            <Button onClick={handleCancelScan} variant="ghost" className="rounded-xl h-12">
+              Cancel
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Manual entry: recipient, amount, destination chain */}
+      {manualEntry && !scannedData && txStep === "idle" && (
+        <div className="space-y-4">
+          <div className="text-center mb-2">
+            <h3 className="text-lg font-semibold">Enter payment details</h3>
+          </div>
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <Label className="text-sm">Recipient address or ENS name</Label>
+              <Input
+                placeholder="0x... or name.eth"
+                value={recipient}
+                onChange={(e) => setRecipient(e.target.value)}
+                className="rounded-xl h-11 bg-secondary/30"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-sm">Amount (USDC)</Label>
+              <Input
+                type="number"
+                placeholder="0.00"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                className="rounded-xl h-11 bg-secondary/30 font-mono"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm">Destination chain</Label>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {supportedChains
+                  .filter((c) => isGatewaySupported(c.id))
+                  .sort((a, b) => (a.id === arcTestnet.id ? -1 : b.id === arcTestnet.id ? 1 : 0))
+                  .map((chain) => {
+                    const info = getChainInfo(chain.id);
+                    const iconUrl = CHAIN_ICON_URLS[chain.id] ?? getChainIconUrl(chain.id);
+                    const isSelected = (destChainId || arcTestnet.id.toString()) === chain.id.toString();
+                    return (
+                      <button
+                        key={chain.id}
+                        type="button"
+                        onClick={() => setDestChainId(chain.id.toString())}
+                        className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border transition-all min-h-[64px] justify-center ${
+                          isSelected
+                            ? "border-primary bg-primary/10 ring-1 ring-primary/20"
+                            : "border-border/60 bg-secondary/30 hover:border-border hover:bg-secondary/50"
+                        }`}
+                      >
+                        <div className="w-10 h-10 rounded-xl bg-background flex items-center justify-center overflow-hidden shrink-0">
+                          {iconUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={iconUrl} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="text-sm font-semibold text-muted-foreground">
+                              {chain.name.charAt(0)}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs font-medium truncate w-full text-center">{chain.name}</p>
+                        {info?.attestationTime && (
+                          <p className="text-[10px] text-muted-foreground">{info.attestationTime}</p>
+                        )}
+                        {isSelected && <Check className="w-4 h-4 text-primary shrink-0" />}
+                      </button>
+                    );
+                  })}
+              </div>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button onClick={handleManualContinue} className="flex-1 h-12 rounded-xl">
+              Continue
+            </Button>
+            <Button
+              variant="outline"
+              className="h-12 rounded-xl"
+              onClick={() => { setManualEntry(false); setRecipient(""); setAmount(""); setDestChainId(arcTestnet.id.toString()); }}
+            >
+              Back
+            </Button>
+          </div>
         </div>
       )}
 
@@ -267,7 +430,7 @@ export function SendFlow() {
               <Button
                 onClick={handleSend}
                 disabled={txStep !== "idle"}
-                className="w-full h-14 rounded-xl text-base font-semibold"
+                className="w-full h-12 rounded-xl text-sm font-semibold min-h-[48px]"
               >
                 {txStep === "idle" && (
                   <>
@@ -282,13 +445,33 @@ export function SendFlow() {
               </Button>
               
               {txStep === "idle" && (
-                <Button
-                  onClick={handleReset}
-                  variant="ghost"
-                  className="w-full rounded-xl"
-                >
-                  Scan Different QR
-                </Button>
+                <div className="flex flex-col gap-2 w-full">
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => { setScannedData(null); setManualEntry(true); }}
+                      variant="ghost"
+                      className="flex-1 rounded-xl"
+                    >
+                      Change details
+                    </Button>
+                    <Button
+                      onClick={handleReset}
+                      variant="ghost"
+                      className="flex-1 rounded-xl"
+                    >
+                      Scan different QR
+                    </Button>
+                  </div>
+                  {onClose && (
+                    <Button
+                      onClick={onClose}
+                      variant="outline"
+                      className="w-full rounded-xl"
+                    >
+                      Close
+                    </Button>
+                  )}
+                </div>
               )}
             </div>
         </div>
@@ -296,39 +479,94 @@ export function SendFlow() {
 
       {/* Success State */}
       {txStep === "success" && (
-        <div className="text-center py-8 space-y-4">
-            <div className="w-16 h-16 mx-auto rounded-full bg-green-500/20 flex items-center justify-center">
+        <div className="space-y-5">
+          <div className="text-center">
+            <div className="w-16 h-16 mx-auto rounded-full bg-green-500/20 flex items-center justify-center mb-3">
               <CheckCircle2 className="w-8 h-8 text-green-500" />
             </div>
-            <div>
-              <h3 className="text-xl font-semibold mb-1">Payment Sent!</h3>
-              <p className="text-muted-foreground">
-                {amount} USDC sent successfully
-              </p>
+            <h3 className="text-xl font-semibold mb-1">Payment sent</h3>
+            <p className="text-muted-foreground">
+              {amount} USDC sent to recipient on {scannedData?.chainName ?? "destination chain"}
+            </p>
+          </div>
+          {mintTxHash && (
+            <div className="rounded-xl bg-secondary/30 border border-border/50 p-4 space-y-2">
+              <p className="text-xs font-medium text-muted-foreground">Mint transaction</p>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 text-xs font-mono truncate text-foreground">
+                  {mintTxHash}
+                </code>
+                {destChainId && (() => {
+                  const destInfo = getChainInfo(parseInt(destChainId));
+                  const explorerUrl = destInfo.chain?.blockExplorers?.default?.url;
+                  return explorerUrl ? (
+                    <a
+                      href={`${explorerUrl}/tx/${mintTxHash}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="shrink-0 p-1.5 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                      aria-label="View on explorer"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                    </a>
+                  ) : null;
+                })()}
+              </div>
             </div>
+          )}
+          {onClose && (
+            <Button
+              onClick={() => {
+                setTxStep("idle");
+                setMintTxHash(null);
+                setScannedData(null);
+                setRecipient("");
+                setAmount("");
+                setDestChainId("");
+                onClose();
+              }}
+              className="w-full h-12 rounded-xl"
+            >
+              Close
+            </Button>
+          )}
         </div>
       )}
 
-      {/* Initial State - Scan Button */}
-      {!scanning && !scannedData && txStep === "idle" && (
+      {/* Initial State - Scan or Enter manually */}
+      {!scanning && !manualEntry && !scannedData && txStep === "idle" && (
         <div className="text-center space-y-5">
-          <div className="py-6">
+          <div className="py-4">
             <div className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center mb-3">
               <ScanLine className="w-8 h-8 text-primary" />
             </div>
-            <h3 className="text-lg font-semibold mb-2">Scan to Pay</h3>
+            <h3 className="text-lg font-semibold mb-2">Send USDC</h3>
             <p className="text-sm text-muted-foreground max-w-xs mx-auto">
-              Scan a WarpSend QR code to send USDC across any chain
+              Scan a WarpSend QR code or enter payment details manually
             </p>
           </div>
 
-          <Button
-            onClick={handleScanQR}
-            className="w-full h-12 rounded-xl text-sm font-semibold"
-          >
-            <ScanLine className="w-4 h-4 mr-2" />
-            Scan QR Code
-          </Button>
+          <div className="flex flex-col gap-2">
+            <Button
+              onClick={handleScanQR}
+              className="w-full h-12 rounded-xl text-sm font-semibold min-h-[48px]"
+            >
+              <ScanLine className="w-4 h-4 mr-2 shrink-0" />
+              Scan QR Code
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full h-12 rounded-xl text-sm font-medium min-h-[48px]"
+              onClick={() => {
+                if (!destChainId) setDestChainId(arcTestnet.id.toString());
+                setManualEntry(true);
+              }}
+            >
+              <PenLine className="w-4 h-4 mr-2 shrink-0" />
+              Enter manually
+            </Button>
+          </div>
         </div>
       )}
     </div>

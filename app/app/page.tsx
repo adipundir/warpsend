@@ -1,63 +1,89 @@
 "use client";
 
 import { useState } from "react";
+import { useAccount } from "wagmi";
 import { UnifiedBalance } from "@/components/unified-balance";
 import { SendFlow } from "@/components/send-flow";
 import { ReceiveFlow } from "@/components/receive-flow";
-import { Send, QrCode } from "lucide-react";
+import { Modal } from "@/components/modal";
+import { Wallet, Send, QrCode } from "lucide-react";
 
 export default function AppPage() {
-  const [activeTab, setActiveTab] = useState<"send" | "receive">("send");
+  const { isConnected, isConnecting, isReconnecting } = useAccount();
+  const [depositModalOpen, setDepositModalOpen] = useState(false);
+  const [sendModalOpen, setSendModalOpen] = useState(false);
+  const [receiveModalOpen, setReceiveModalOpen] = useState(false);
+
+  const showConnectPrompt = !isConnected && !isConnecting && !isReconnecting;
+  const showLoading = isConnecting || isReconnecting;
 
   return (
-    <div className="min-h-screen">
-      <div className="fixed inset-0 -z-10">
+    <div className="h-full min-h-0 overflow-hidden flex flex-col">
+      <div className="fixed inset-0 -z-10 pointer-events-none">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/5 via-transparent to-transparent" />
       </div>
 
-      <div className="mx-auto max-w-6xl px-4 py-8 md:px-6 md:py-12">
-        {/* Top row: Balance left, Send/Receive right */}
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-6 lg:gap-8">
-          {/* Left: Gateway unified balance */}
-          <section className="min-h-[280px] flex flex-col rounded-2xl border border-border/60 bg-card/50 dark:bg-white/[0.02] p-6 md:p-8">
-            <UnifiedBalance />
-          </section>
+      <div className="flex-1 min-h-0 overflow-hidden flex flex-col items-center justify-center">
+        <div className="w-full mx-auto max-w-6xl px-4 py-8 md:px-6 md:py-10 overflow-hidden">
+        {showLoading ? (
+          <div className="rounded-2xl border border-border/60 bg-card/50 dark:bg-white/[0.02] p-8 md:p-12 text-center">
+            <p className="text-muted-foreground">Loading…</p>
+          </div>
+        ) : showConnectPrompt ? (
+          <div className="rounded-2xl border border-border/60 bg-card/50 dark:bg-white/[0.02] p-8 md:p-12 text-center">
+            <p className="text-foreground font-medium">Connect your wallet to access the app.</p>
+          </div>
+        ) : (
+        <>
+        {/* Single box: balance + action buttons */}
+        <div className="rounded-2xl border border-border/60 bg-card/50 dark:bg-white/[0.02] p-6 md:p-8 mb-10">
+          {/* Balance display */}
+          <div className="mb-6">
+            <UnifiedBalance
+              variant="summary"
+              depositModalOpen={depositModalOpen}
+              onDepositModalOpenChange={setDepositModalOpen}
+            />
+          </div>
 
-          {/* Right: Send / Receive */}
-          <section className="min-h-[280px] flex flex-col rounded-2xl border border-border/60 bg-card/50 dark:bg-white/[0.02] p-6 md:p-8">
-            {/* Custom tab bar - not shadcn */}
-            <div className="flex rounded-2xl p-1 bg-black/10 dark:bg-white/5 mb-6 w-full max-w-xs">
-              <button
-                type="button"
-                onClick={() => setActiveTab("send")}
-                className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-medium transition-all ${
-                  activeTab === "send"
-                    ? "bg-background dark:bg-white/10 text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <Send className="w-4 h-4" />
-                Send
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab("receive")}
-                className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-medium transition-all ${
-                  activeTab === "receive"
-                    ? "bg-background dark:bg-white/10 text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <QrCode className="w-4 h-4" />
-                Receive
-              </button>
-            </div>
+          {/* Three buttons together: Deposit | Send | Receive */}
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+            <button
+              type="button"
+              onClick={() => setDepositModalOpen(true)}
+              className="flex-1 flex items-center justify-center gap-2 h-12 min-h-[48px] rounded-xl bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary/90 transition-colors"
+            >
+              <Wallet className="w-4 h-4 shrink-0" />
+              Deposit into Gateway
+            </button>
+            <button
+              type="button"
+              onClick={() => setSendModalOpen(true)}
+              className="flex-1 flex items-center justify-center gap-2 h-12 min-h-[48px] rounded-xl bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary/90 transition-colors"
+            >
+              <Send className="w-4 h-4 shrink-0" />
+              Send
+            </button>
+            <button
+              type="button"
+              onClick={() => setReceiveModalOpen(true)}
+              className="flex-1 flex items-center justify-center gap-2 h-12 min-h-[48px] rounded-xl bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary/90 transition-colors"
+            >
+              <QrCode className="w-4 h-4 shrink-0" />
+              Receive
+            </button>
+          </div>
+        </div>
 
-            <div className="flex-1">
-              {activeTab === "send" && <SendFlow />}
-              {activeTab === "receive" && <ReceiveFlow />}
-            </div>
-          </section>
+        <Modal open={sendModalOpen} onClose={() => setSendModalOpen(false)}>
+          <SendFlow onClose={() => setSendModalOpen(false)} />
+        </Modal>
+
+        <Modal open={receiveModalOpen} onClose={() => setReceiveModalOpen(false)}>
+          <ReceiveFlow onClose={() => setReceiveModalOpen(false)} />
+        </Modal>
+        </>
+        )}
         </div>
       </div>
     </div>

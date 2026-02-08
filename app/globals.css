@@ -123,9 +123,16 @@
     @apply border-border outline-ring/50;
   }
 
+  html {
+    height: 100%;
+    overflow: hidden;
+  }
+
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
+    height: 100%;
+    overflow: hidden;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -160,10 +167,7 @@
   }
 }
 
-/* Smooth scrolling */
-html {
-  scroll-behavior: smooth;
-}
+/* No vertical scroll on app; smooth scroll only for in-page anchors if needed */
 
 /* Better focus states */
 :focus-visible {

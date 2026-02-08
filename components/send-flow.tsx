@@ -12,6 +12,7 @@ import { resolveEnsToAddress, looksLikeEnsName } from "@/lib/ens";
 import { GATEWAY_MINTER_ABI, createBurnIntent, createBurnIntentTypedData, requestGatewayTransfer, getGatewayBalances } from "@/lib/gateway";
 import { ScanLine, Send, CheckCircle2, Check, ExternalLink } from "lucide-react";
 import { Html5Qrcode } from "html5-qrcode";
+import { addTransaction } from "@/lib/transaction-store";
 
 type TxStep = "idle" | "signing" | "requesting" | "switching" | "minting" | "success";
 
@@ -267,6 +268,19 @@ export function SendFlow({ onClose }: { onClose?: () => void }) {
 
       setMintTxHash(hash ?? null);
       setTxStep("success");
+
+      // Save transaction to history
+      addTransaction({
+        type: "send",
+        amount: amount,
+        chainId: destinationChainId,
+        chainName: destinationChain?.name ?? "Unknown",
+        recipient: recipientAddress,
+        timestamp: Date.now(),
+        txHash: hash ?? undefined,
+        status: "completed",
+      });
+
       window.dispatchEvent(new CustomEvent("warpsend-balance-changed"));
     } catch (error: any) {
       console.error("Send error:", error);
@@ -368,8 +382,8 @@ export function SendFlow({ onClose }: { onClose?: () => void }) {
                         type="button"
                         onClick={() => setDestChainId(chain.id.toString())}
                         className={`flex items-center gap-2 p-2 rounded-lg border transition-all text-left ${isSelected
-                            ? "border-primary bg-primary/10 ring-1 ring-primary/20"
-                            : "border-border/60 bg-secondary/30 hover:border-border hover:bg-secondary/50"
+                          ? "border-primary bg-primary/10 ring-1 ring-primary/20"
+                          : "border-border/60 bg-secondary/30 hover:border-border hover:bg-secondary/50"
                           }`}
                       >
                         <div className="w-8 h-8 rounded-lg bg-background flex items-center justify-center overflow-hidden shrink-0">

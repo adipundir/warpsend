@@ -28,6 +28,7 @@ import {
   getChainIconUrl,
 } from "@/lib/chains";
 import { ERC20_ABI, formatUSDCAmount, parseUSDCAmount } from "@/lib/contracts";
+import { addTransaction } from "@/lib/transaction-store";
 import { getGatewayBalances, GATEWAY_WALLET_ABI } from "@/lib/gateway";
 
 interface ChainBalance {
@@ -200,6 +201,18 @@ export function UnifiedBalance({
       });
 
       await publicClient.waitForTransactionReceipt({ hash: depositHash });
+
+      // Save deposit transaction to history
+      const depositChainInfo = supportedChains.find(c => c.id === depositChainId);
+      addTransaction({
+        type: "deposit",
+        amount: depositAmount,
+        chainId: depositChainId,
+        chainName: depositChainInfo?.name ?? "Unknown",
+        timestamp: Date.now(),
+        txHash: depositHash,
+        status: "completed",
+      });
 
       toast.success(`Deposited ${depositAmount} USDC to Gateway`);
 

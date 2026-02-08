@@ -2,60 +2,42 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useAccount } from "wagmi";
-import { ArrowUpRight, ArrowDownLeft, ExternalLink, Clock, RefreshCw } from "lucide-react";
+import { ArrowUpRight, ArrowDownLeft, ExternalLink, Clock, RefreshCw, Wallet } from "lucide-react";
 import { supportedChains, CHAIN_ICON_URLS, getChainIconUrl } from "@/lib/chains";
-
-interface Transaction {
-    id: string;
-    type: "send" | "receive" | "deposit";
-    amount: string;
-    chain: string;
-    chainId: number;
-    recipient?: string;
-    sender?: string;
-    timestamp: Date;
-    txHash?: string;
-    status: "pending" | "completed" | "failed";
-}
-
-// Mock transactions for demo - in production, fetch from Gateway API or indexer
-function getMockTransactions(address: string): Transaction[] {
-    if (!address) return [];
-
-    // Return empty for now - transactions will appear after real activity
-    return [];
-}
+import { getTransactions, getExplorerUrl, type Transaction } from "@/lib/transaction-store";
 
 export function TransactionHistory() {
     const { address, isConnected } = useAccount();
     const [transactions, setTransactions] = useState<Transaction[]>([]);
-    const [isLoading, setIsLoading] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
 
-    const fetchTransactions = useCallback(async () => {
-        if (!address) return;
+    const fetchTransactions = useCallback(() => {
         setIsLoading(true);
         try {
-            // In production, fetch from Gateway API or blockchain indexer
-            const txs = getMockTransactions(address);
+            const txs = getTransactions();
             setTransactions(txs);
         } catch (error) {
             console.error("Failed to fetch transactions:", error);
         } finally {
             setIsLoading(false);
         }
-    }, [address]);
+    }, []);
 
     useEffect(() => {
         fetchTransactions();
     }, [fetchTransactions]);
 
-    // Listen for new transactions
+    // Listen for transaction updates
     useEffect(() => {
-        const onBalanceChanged = () => {
-            fetchTransactions();
+        const onUpdate = () => fetchTransactions();
+        window.addEventListener("warpsend-transaction-added", onUpdate);
+        window.addEventListener("warpsend-transaction-updated", onUpdate);
+        window.addEventListener("warpsend-balance-changed", onUpdate);
+        return () => {
+            window.removeEventListener("warpsend-transaction-added", onUpdate);
+            window.removeEventListener("warpsend-transaction-updated", onUpdate);
+            window.removeEventListener("warpsend-balance-changed", onUpdate);
         };
-        window.addEventListener("warpsend-balance-changed", onBalanceChanged);
-        return () => window.removeEventListener("warpsend-balance-changed", onBalanceChanged);
     }, [fetchTransactions]);
 
     if (!isConnected) return null;
@@ -72,9 +54,9 @@ export function TransactionHistory() {
         return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
     };
 
-    const formatTime = (date: Date) => {
-        const now = new Date();
-        const diff = now.getTime() - date.getTime();
+    const formatTime = (timestamp: number) => {
+        const now = Date.now();
+        const diff = now - timestamp;
         const mins = Math.floor(diff / 60000);
         const hours = Math.floor(diff / 3600000);
         const days = Math.floor(diff / 86400000);
@@ -83,6 +65,32 @@ export function TransactionHistory() {
         if (mins < 60) return `${mins}m ago`;
         if (hours < 24) return `${hours}h ago`;
         return `${days}d ago`;
+    };
+
+    const getTypeIcon = (type: Transaction["type"]) => {
+        switch (type) {
+            case "send":
+                return <ArrowUpRight className="w-5 h-5" />;
+            case "receive":
+                return <ArrowDownLeft className="w-5 h-5" />;
+            case "deposit":
+                return <Wallet className="w-5 h-5" />;
+            default:
+                return <ArrowDownLeft className="w-5 h-5" />;
+        }
+    };
+
+    const getTypeColor = (type: Transaction["type"]) => {
+        switch (type) {
+            case "send":
+                return "bg-orange-500/10 text-orange-500";
+            case "receive":
+                return "bg-green-500/10 text-green-500";
+            case "deposit":
+                return "bg-primary/10 text-primary";
+            default:
+                return "bg-primary/10 text-primary";
+        }
     };
 
     return (
@@ -124,74 +132,67 @@ export function TransactionHistory() {
                 </div>
             ) : (
                 <div className="space-y-2">
-                    {transactions.map((tx) => (
-                        <div
-                            key={tx.id}
-                            className="flex items-center gap-4 p-4 rounded-xl bg-secondary/20 hover:bg-secondary/30 transition-colors card-hover"
-                        >
-                            {/* Icon */}
-                            <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${tx.type === "send"
-                                    ? "bg-orange-500/10 text-orange-500"
-                                    : tx.type === "receive"
-                                        ? "bg-green-500/10 text-green-500"
-                                        : "bg-primary/10 text-primary"
-                                }`}>
-                                {tx.type === "send" ? (
-                                    <ArrowUpRight className="w-5 h-5" />
-                                ) : tx.type === "receive" ? (
-                                    <ArrowDownLeft className="w-5 h-5" />
-                                ) : (
-                                    <ArrowDownLeft className="w-5 h-5" />
-                                )}
-                            </div>
+                    {transactions.map((tx) => {
+                        const explorerUrl = tx.txHash ? getExplorerUrl(tx.chainId, tx.txHash) : null;
+                        return (
+                            <div
+                                key={tx.id}
+                                className="flex items-center gap-4 p-4 rounded-xl bg-secondary/20 hover:bg-secondary/30 transition-colors card-hover"
+                            >
+                                {/* Icon */}
+                                <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${getTypeColor(tx.type)}`}>
+                                    {getTypeIcon(tx.type)}
+                                </div>
 
-                            {/* Details */}
-                            <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2">
-                                    <span className="font-medium text-sm capitalize">{tx.type}</span>
-                                    {tx.status === "pending" && (
-                                        <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-500/10 text-yellow-500">
-                                            Pending
-                                        </span>
+                                {/* Details */}
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2">
+                                        <span className="font-medium text-sm capitalize">{tx.type}</span>
+                                        {tx.status === "pending" && (
+                                            <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-500/10 text-yellow-500">
+                                                Pending
+                                            </span>
+                                        )}
+                                    </div>
+                                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img
+                                            src={getChainIcon(tx.chainId)}
+                                            alt=""
+                                            className="w-3 h-3 rounded-full"
+                                        />
+                                        <span>{tx.chainName || getChainName(tx.chainId)}</span>
+                                        <span>•</span>
+                                        <span>{formatTime(tx.timestamp)}</span>
+                                        {tx.recipient && (
+                                            <>
+                                                <span>•</span>
+                                                <span>To {formatAddress(tx.recipient)}</span>
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Amount */}
+                                <div className="text-right shrink-0">
+                                    <p className={`font-mono font-semibold text-sm ${tx.type === "send" ? "text-orange-500" : "text-green-500"
+                                        }`}>
+                                        {tx.type === "send" ? "-" : "+"}{tx.amount} USDC
+                                    </p>
+                                    {explorerUrl && (
+                                        <a
+                                            href={explorerUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                                        >
+                                            View <ExternalLink className="w-3 h-3" />
+                                        </a>
                                     )}
                                 </div>
-                                <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
-                                    <img
-                                        src={getChainIcon(tx.chainId)}
-                                        alt=""
-                                        className="w-3 h-3 rounded-full"
-                                    />
-                                    <span>{getChainName(tx.chainId)}</span>
-                                    <span>•</span>
-                                    <span>{formatTime(tx.timestamp)}</span>
-                                    {tx.recipient && (
-                                        <>
-                                            <span>•</span>
-                                            <span>To {formatAddress(tx.recipient)}</span>
-                                        </>
-                                    )}
-                                </div>
                             </div>
-
-                            {/* Amount */}
-                            <div className="text-right shrink-0">
-                                <p className={`font-mono font-semibold text-sm ${tx.type === "send" ? "text-orange-500" : "text-green-500"
-                                    }`}>
-                                    {tx.type === "send" ? "-" : "+"}{tx.amount} USDC
-                                </p>
-                                {tx.txHash && (
-                                    <a
-                                        href={`https://sepolia.etherscan.io/tx/${tx.txHash}`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-                                    >
-                                        View <ExternalLink className="w-3 h-3" />
-                                    </a>
-                                )}
-                            </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             )}
         </div>

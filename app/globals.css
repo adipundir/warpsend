@@ -135,7 +135,12 @@
     overflow: hidden;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     @apply tracking-tight font-semibold;
   }
 }
@@ -164,6 +169,76 @@
 
   .glow-sm {
     box-shadow: 0 0 20px -5px var(--primary);
+  }
+
+  /* Shimmer loading animation */
+  .shimmer {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(90deg,
+        transparent 0%,
+        var(--muted) 50%,
+        transparent 100%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s ease-in-out infinite;
+  }
+
+  .shimmer-text {
+    color: transparent;
+    background: linear-gradient(90deg,
+        var(--muted-foreground) 0%,
+        var(--foreground) 50%,
+        var(--muted-foreground) 100%);
+    background-size: 200% 100%;
+    background-clip: text;
+    -webkit-background-clip: text;
+    animation: shimmer 2s ease-in-out infinite;
+  }
+
+  /* Pulse glow for balance updates */
+  .pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+
+  /* Button interaction effects */
+  .btn-interactive {
+    @apply transition-all duration-200 ease-out;
+  }
+
+  .btn-interactive:hover {
+    @apply scale-[1.02];
+    box-shadow: 0 8px 30px -8px var(--primary);
+  }
+
+  .btn-interactive:active {
+    @apply scale-[0.98];
+  }
+
+  /* Icon animations */
+  .icon-slide-right {
+    @apply transition-transform duration-200;
+  }
+
+  .group:hover .icon-slide-right {
+    @apply translate-x-0.5;
+  }
+
+  .icon-bounce {
+    @apply transition-transform duration-200;
+  }
+
+  .group:hover .icon-bounce {
+    animation: icon-bounce 0.4s ease-in-out;
+  }
+
+  /* Card hover lift */
+  .card-hover {
+    @apply transition-all duration-200;
+  }
+
+  .card-hover:hover {
+    @apply scale-[1.02] -translate-y-0.5;
+    box-shadow: 0 12px 40px -12px rgba(0, 0, 0, 0.15);
   }
 }
 
@@ -203,7 +278,45 @@ input[type="number"]::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
+
 input[type="number"] {
   -moz-appearance: textfield;
   appearance: textfield;
+}
+
+/* Keyframe animations */
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes pulse-glow {
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 var(--primary);
+    opacity: 1;
+  }
+
+  50% {
+    box-shadow: 0 0 20px 5px var(--primary);
+    opacity: 0.8;
+  }
+}
+
+@keyframes icon-bounce {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-2px);
+  }
 }

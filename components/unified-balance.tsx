@@ -110,7 +110,7 @@ export function UnifiedBalance({
     setIsLoadingBalances(true);
     try {
       const response = await getGatewayBalances(address);
-      
+
       let total = 0;
       const balances: ChainBalance[] = [];
 
@@ -200,7 +200,7 @@ export function UnifiedBalance({
       });
 
       await publicClient.waitForTransactionReceipt({ hash: depositHash });
-      
+
       toast.success(`Deposited ${depositAmount} USDC to Gateway`);
 
       setDepositAmount("");
@@ -231,20 +231,27 @@ export function UnifiedBalance({
     chainBalances.length > 0
       ? chainBalances
       : supportedChains
-          .filter((c) => GATEWAY_DOMAINS[c.id] !== undefined)
-          .map((c) => ({
-            chainId: c.id,
-            chainName: c.name,
-            domain: GATEWAY_DOMAINS[c.id],
-            walletBalance: "0",
-            gatewayBalance: "0.000000",
-          }))
+        .filter((c) => GATEWAY_DOMAINS[c.id] !== undefined)
+        .map((c) => ({
+          chainId: c.id,
+          chainName: c.name,
+          domain: GATEWAY_DOMAINS[c.id],
+          walletBalance: "0",
+          gatewayBalance: "0.000000",
+        }))
   ).sort((a, b) => (a.chainId === arcTestnet.id ? -1 : b.chainId === arcTestnet.id ? 1 : 0));
 
   if (!isConnected) {
     return (
-      <div className="text-center py-8">
-        <p className="text-muted-foreground">Connect your wallet to view your balance</p>
+      <div className="text-center py-12 px-6 rounded-2xl border border-border/60 bg-card/50">
+        <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-primary/10 flex items-center justify-center">
+          <svg className="w-8 h-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4" />
+          </svg>
+        </div>
+        <h3 className="text-lg font-semibold mb-1">Connect your wallet</h3>
+        <p className="text-muted-foreground text-sm max-w-xs mx-auto">Connect to view your unified balance and send USDC across chains.</p>
       </div>
     );
   }
@@ -294,9 +301,13 @@ export function UnifiedBalance({
       {/* Main balance display */}
       <div className="text-center py-8 rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/10">
         <p className="text-sm font-medium text-muted-foreground mb-2">Available to send</p>
-        <p className="text-5xl md:text-6xl font-bold tracking-tighter tabular-nums mb-2">
-          {isLoadingBalances ? "..." : unifiedBalance}
-        </p>
+        {isLoadingBalances ? (
+          <div className="h-14 md:h-16 w-48 mx-auto rounded-xl shimmer mb-2" />
+        ) : (
+          <p className="text-5xl md:text-6xl font-bold tracking-tighter tabular-nums mb-2">
+            {unifiedBalance}
+          </p>
+        )}
         <p className="text-lg text-muted-foreground font-medium">USDC</p>
         {!isControlled && (
           <Button
@@ -316,9 +327,9 @@ export function UnifiedBalance({
             {displayChainBalances.map((cb) => {
               const iconUrl = CHAIN_ICON_URLS[cb.chainId] ?? getChainIconUrl(cb.chainId);
               return (
-                <div 
-                  key={cb.chainId} 
-                  className="glass-card rounded-2xl p-5 flex flex-col items-center text-center gap-3 transition-all hover:scale-[1.02]"
+                <div
+                  key={cb.chainId}
+                  className="glass-card card-hover rounded-2xl p-5 flex flex-col items-center text-center gap-3"
                 >
                   <div className="w-12 h-12 rounded-xl bg-secondary/80 flex items-center justify-center overflow-hidden shrink-0">
                     {iconUrl ? (
@@ -335,9 +346,13 @@ export function UnifiedBalance({
                     )}
                   </div>
                   <p className="text-sm font-medium truncate w-full">{cb.chainName}</p>
-                  <p className="text-base font-mono font-semibold tabular-nums">
-                    {isLoadingBalances ? "…" : cb.gatewayBalance}
-                  </p>
+                  {isLoadingBalances ? (
+                    <div className="h-5 w-20 rounded shimmer" />
+                  ) : (
+                    <p className="text-base font-mono font-semibold tabular-nums">
+                      {cb.gatewayBalance}
+                    </p>
+                  )}
                 </div>
               );
             })}
@@ -346,157 +361,156 @@ export function UnifiedBalance({
       )}
 
       <Modal open={depositModalOpen} onClose={() => setDepositModalOpen(false)}>
-          <div className="space-y-5">
-            {/* Wallet balance for selected chain */}
-            <div className="flex items-center justify-between p-5 rounded-xl bg-secondary/30 border border-border/50">
-              <div>
-                <p className="text-sm text-muted-foreground">Wallet balance on {depositChainInfo.chain?.name ?? "selected chain"}</p>
-                <p className="text-2xl font-bold tabular-nums">
-                  {isSelectedChainBalancePending ? "…" : `${modalWalletBalance} USDC`}
-                </p>
-                {depositChainId !== chainId && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    You’ll switch to {depositChainInfo.chain?.name} when you confirm deposit
-                  </p>
-                )}
-              </div>
-              <Badge variant="secondary" className="rounded-lg px-3 py-1">{depositChainInfo.chain?.name ?? "—"}</Badge>
-            </div>
-
-            {/* Source chain: grid of cards */}
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Source chain</Label>
-              <div className="grid grid-cols-2 gap-2">
-                {[...supportedChains]
-                  .sort((a, b) => (a.id === arcTestnet.id ? -1 : b.id === arcTestnet.id ? 1 : 0))
-                  .map((chain) => {
-                    const info = getChainInfo(chain.id);
-                    const iconUrl = CHAIN_ICON_URLS[chain.id] ?? getChainIconUrl(chain.id);
-                    const isSelected = (selectedDepositChain || chainId?.toString() || arcTestnet.id.toString()) === chain.id.toString();
-                    const isCurrent = chain.id === chainId;
-                    return (
-                      <button
-                        key={chain.id}
-                        type="button"
-                        disabled={isDepositing}
-                        onClick={() => setSelectedDepositChain(chain.id.toString())}
-                        className={`flex items-center gap-3 p-3 rounded-xl border text-left transition-all min-h-[56px] ${
-                          isSelected
-                            ? "border-primary bg-primary/10 ring-1 ring-primary/20"
-                            : "border-border/60 bg-secondary/30 hover:border-border hover:bg-secondary/50"
-                        }`}
-                      >
-                        <div className="w-10 h-10 rounded-lg bg-background flex items-center justify-center overflow-hidden shrink-0">
-                          {iconUrl ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={iconUrl} alt="" className="w-full h-full object-cover" />
-                          ) : (
-                            <span className="text-sm font-semibold text-muted-foreground">
-                              {chain.name.charAt(0)}
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-foreground flex items-center gap-1 flex-wrap">
-                            {chain.name}
-                            {isCurrent && (
-                              <span className="text-xs text-muted-foreground font-normal">(current)</span>
-                            )}
-                          </p>
-                          {info?.attestationTime && (
-                            <p className="text-xs text-muted-foreground">
-                              {info.attestationTime}
-                            </p>
-                          )}
-                        </div>
-                        {isSelected && (
-                          <Check className="w-4 h-4 text-primary shrink-0" />
-                        )}
-                      </button>
-                    );
-                  })}
-              </div>
-            </div>
-
-            {/* Amount with 25% 50% Max */}
-            <div className="space-y-2">
-              <Label htmlFor="deposit-amount-modal" className="text-sm font-medium">Amount (USDC)</Label>
-              <Input
-                id="deposit-amount-modal"
-                type="number"
-                placeholder="0.00"
-                value={depositAmount}
-                onChange={(e) => setDepositAmount(e.target.value)}
-                disabled={isDepositing}
-                min="0"
-                step="0.01"
-                className="rounded-xl h-12 bg-secondary/30 border-border/50 focus:border-primary/50 text-lg font-mono"
-              />
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1 rounded-lg"
-                  onClick={() =>
-                    setDepositAmount(
-                      (modalWalletBalanceNum * 0.25).toFixed(6)
-                    )
-                  }
-                  disabled={isDepositing || modalWalletBalanceNum <= 0}
-                >
-                  25%
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1 rounded-lg"
-                  onClick={() =>
-                    setDepositAmount(
-                      (modalWalletBalanceNum * 0.5).toFixed(6)
-                    )
-                  }
-                  disabled={isDepositing || modalWalletBalanceNum <= 0}
-                >
-                  50%
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1 rounded-lg"
-                  onClick={() => setDepositAmount(modalWalletBalance)}
-                  disabled={isDepositing || modalWalletBalanceNum <= 0}
-                >
-                  Max
-                </Button>
-              </div>
-            </div>
-
-            <Button
-              className="w-full h-14 rounded-xl text-base font-semibold"
-              onClick={handleDeposit}
-              disabled={isDepositing || !depositAmount || parseFloat(depositAmount) <= 0}
-            >
-              {isDepositing ? "Depositing..." : "Deposit to Gateway"}
-            </Button>
-
-            {chainId !== depositChainId && (
-              <p className="text-xs text-center text-muted-foreground">
-                You&apos;ll be prompted to switch to {depositChainInfo.chain?.name}
+        <div className="space-y-5">
+          {/* Wallet balance for selected chain */}
+          <div className="flex items-center justify-between p-5 rounded-xl bg-secondary/30 border border-border/50">
+            <div>
+              <p className="text-sm text-muted-foreground">Wallet balance on {depositChainInfo.chain?.name ?? "selected chain"}</p>
+              <p className="text-2xl font-bold tabular-nums">
+                {isSelectedChainBalancePending ? "…" : `${modalWalletBalance} USDC`}
               </p>
-            )}
-
-            <p className="text-xs text-center text-muted-foreground">
-              Need testnet USDC?{" "}
-              <a
-                href="https://faucet.circle.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline hover:text-foreground transition-colors"
-              >
-                Circle Faucet
-              </a>
-            </p>
+              {depositChainId !== chainId && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  You’ll switch to {depositChainInfo.chain?.name} when you confirm deposit
+                </p>
+              )}
+            </div>
+            <Badge variant="secondary" className="rounded-lg px-3 py-1">{depositChainInfo.chain?.name ?? "—"}</Badge>
           </div>
+
+          {/* Source chain: grid of cards */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Source chain</Label>
+            <div className="grid grid-cols-2 gap-2">
+              {[...supportedChains]
+                .sort((a, b) => (a.id === arcTestnet.id ? -1 : b.id === arcTestnet.id ? 1 : 0))
+                .map((chain) => {
+                  const info = getChainInfo(chain.id);
+                  const iconUrl = CHAIN_ICON_URLS[chain.id] ?? getChainIconUrl(chain.id);
+                  const isSelected = (selectedDepositChain || chainId?.toString() || arcTestnet.id.toString()) === chain.id.toString();
+                  const isCurrent = chain.id === chainId;
+                  return (
+                    <button
+                      key={chain.id}
+                      type="button"
+                      disabled={isDepositing}
+                      onClick={() => setSelectedDepositChain(chain.id.toString())}
+                      className={`flex items-center gap-3 p-3 rounded-xl border text-left transition-all min-h-[56px] ${isSelected
+                        ? "border-primary bg-primary/10 ring-1 ring-primary/20"
+                        : "border-border/60 bg-secondary/30 hover:border-border hover:bg-secondary/50"
+                        }`}
+                    >
+                      <div className="w-10 h-10 rounded-lg bg-background flex items-center justify-center overflow-hidden shrink-0">
+                        {iconUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={iconUrl} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-sm font-semibold text-muted-foreground">
+                            {chain.name.charAt(0)}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground flex items-center gap-1 flex-wrap">
+                          {chain.name}
+                          {isCurrent && (
+                            <span className="text-xs text-muted-foreground font-normal">(current)</span>
+                          )}
+                        </p>
+                        {info?.attestationTime && (
+                          <p className="text-xs text-muted-foreground">
+                            {info.attestationTime}
+                          </p>
+                        )}
+                      </div>
+                      {isSelected && (
+                        <Check className="w-4 h-4 text-primary shrink-0" />
+                      )}
+                    </button>
+                  );
+                })}
+            </div>
+          </div>
+
+          {/* Amount with 25% 50% Max */}
+          <div className="space-y-2">
+            <Label htmlFor="deposit-amount-modal" className="text-sm font-medium">Amount (USDC)</Label>
+            <Input
+              id="deposit-amount-modal"
+              type="number"
+              placeholder="0.00"
+              value={depositAmount}
+              onChange={(e) => setDepositAmount(e.target.value)}
+              disabled={isDepositing}
+              min="0"
+              step="0.01"
+              className="rounded-xl h-12 bg-secondary/30 border-border/50 focus:border-primary/50 text-lg font-mono"
+            />
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1 rounded-lg"
+                onClick={() =>
+                  setDepositAmount(
+                    (modalWalletBalanceNum * 0.25).toFixed(6)
+                  )
+                }
+                disabled={isDepositing || modalWalletBalanceNum <= 0}
+              >
+                25%
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1 rounded-lg"
+                onClick={() =>
+                  setDepositAmount(
+                    (modalWalletBalanceNum * 0.5).toFixed(6)
+                  )
+                }
+                disabled={isDepositing || modalWalletBalanceNum <= 0}
+              >
+                50%
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1 rounded-lg"
+                onClick={() => setDepositAmount(modalWalletBalance)}
+                disabled={isDepositing || modalWalletBalanceNum <= 0}
+              >
+                Max
+              </Button>
+            </div>
+          </div>
+
+          <Button
+            className="w-full h-14 rounded-xl text-base font-semibold"
+            onClick={handleDeposit}
+            disabled={isDepositing || !depositAmount || parseFloat(depositAmount) <= 0}
+          >
+            {isDepositing ? "Depositing..." : "Deposit to Gateway"}
+          </Button>
+
+          {chainId !== depositChainId && (
+            <p className="text-xs text-center text-muted-foreground">
+              You&apos;ll be prompted to switch to {depositChainInfo.chain?.name}
+            </p>
+          )}
+
+          <p className="text-xs text-center text-muted-foreground">
+            Need testnet USDC?{" "}
+            <a
+              href="https://faucet.circle.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline hover:text-foreground transition-colors"
+            >
+              Circle Faucet
+            </a>
+          </p>
+        </div>
       </Modal>
     </div>
   );
